@@ -62,6 +62,12 @@ const apartmentSchema = new mongoose.Schema(
       enum: ["available", "rented", "sold"],
       default: "available",
     },
+    interestedUsers: [
+      {
+        type: mongoose.Schema.ObjectId,
+        ref: "User",
+      },
+    ],
     location: {
       type: {
         type: String,

@@ -1,6 +1,6 @@
 const asyncHandler = require("express-async-handler");
 const User = require("../models/userModel");
-
+const Apartment = require("../models/apartmentModel");
 
 exports.addToWishlist = asyncHandler(async (req, res, next) => {
   const user = await User.findByIdAndUpdate(
@@ -15,7 +15,15 @@ exports.addToWishlist = asyncHandler(async (req, res, next) => {
     }
   );
 
-  res.status(201).json({ data: user.wishlist });
+  await Apartment.findByIdAndUpdate(req.body.apartmentId, {
+    $addToSet: {
+      interestedUsers: req.user._id,
+    },
+  });
+
+  res
+    .status(201)
+    .json({ message: "Added to wishlist", wishlist: user.wishlist });
 });
 
 exports.removeFromWishlist = asyncHandler(async (req, res, next) => {
@@ -26,7 +34,18 @@ exports.removeFromWishlist = asyncHandler(async (req, res, next) => {
     { new: true }
   );
 
-  res.status(204).json({ data: user.wishlist });
+  await Apartment.findByIdAndUpdate(
+    req.params.apartmentId,
+    {
+      $pull: { interestedUsers: req.user._id },
+    },
+    { new: true }
+  );
+
+  res.status(200).json({
+    message: "Removed from wishlist",
+    wishlist: user.wishlist,
+  });
 });
 
 exports.getWishlist = asyncHandler(async (req, res, next) => {
@@ -34,7 +53,10 @@ exports.getWishlist = asyncHandler(async (req, res, next) => {
   const limit = parseInt(req.query.limit) || 50;
   const skip = (page - 1) * limit;
 
-  const user = await User.findById(req.user._id).populate("wishlist");
+  const user = await User.findById(req.user._id).populate({
+    path: "wishlist",
+    select: "-interestedUsers",
+  });
 
   const totalItems = user.wishlist.length;
   const paginatedWishlist = user.wishlist.slice(skip, skip + limit);
