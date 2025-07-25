@@ -36,7 +36,7 @@ router.put(
   changeUserPasswordValidator,
   updateLoggedUserPass
 );
-router.put("/updateMe", updateLoggedUserValidator, updateLoggedUserData);
+router.patch("/updateMe", updateLoggedUserValidator, updateLoggedUserData);
 router.delete("/deleteMe", deleteLoggedUserData);
 
 // ************************** [admin] **************************
@@ -56,7 +56,7 @@ router.put(
 router
   .route("/:id")
   .get(getUserValidator, getUserById)
-  .put(uploadUserImages, resizeUserImages, updateUserValidator, updateUser)
+  .patch(uploadUserImages, resizeUserImages, updateUserValidator, updateUser)
   .delete(deleteUserValidator, deleteUser);
 
 module.exports = router;

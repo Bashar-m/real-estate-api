@@ -17,6 +17,35 @@ exports.signup = asyncHandler(async (req, res, next) => {
     return next(new ApiError("Email already in use", 400));
   }
 
+  const user = await User.create({
+    name,
+    email,
+    phone,
+    password,
+  });
+
+  const date = new Date().toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
+
+  const token = createToken(user._id);
+  res.status(201).json({
+    message: "Account created. please verify your email.",
+    data: user,
+    date,
+    token,
+  });
+});
+
+exports.signupSendOtp = asyncHandler(async (req, res, next) => {
+  const email = req.body.email;
+  const user = await User.findOne({ email });
+  if (!user) {
+    return next(new ApiError(" No user for this Email", 400));
+  }
   const verificationCode = Math.floor(
     100000 + Math.random() * 900000
   ).toString();
@@ -25,14 +54,11 @@ exports.signup = asyncHandler(async (req, res, next) => {
     .update(verificationCode)
     .digest("hex");
 
-  const user = await User.create({
-    name,
-    email,
-    phone,
-    password,
-    emailVerificationCode: hashedCode,
-    emailVerificationExpires: Date.now() + 10 * 60 * 1000,
-  });
+  user.emailVerificationCode = hashedCode;
+
+  user.emailVerificationExpires = Date.now() + 10 * 60 * 1000;
+
+  await user.save();
 
   const html = `
   <h3>Hello ${user.name},</h3>
@@ -48,7 +74,7 @@ exports.signup = asyncHandler(async (req, res, next) => {
   });
   const token = createToken(user._id);
   res.status(201).json({
-    message: "Account created. Verification code sent to email.",
+    message: `The verification code has been sent to your email :${email}`,
     token,
   });
 });
@@ -111,9 +137,9 @@ exports.verifyEmailCode = asyncHandler(async (req, res, next) => {
   user.emailVerificationPenaltyLevel = 0;
 
   await user.save();
-  console.log(user._id);
-  const token = createToken(user._id);
-  res.status(200).json({ message: "Email verified successfully", token });
+  res
+    .status(200)
+    .json({ message: "Email verified successfully , You can log in now " });
 });
 
 exports.login = asyncHandler(async (req, res, next) => {

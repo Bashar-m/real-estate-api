@@ -1,8 +1,9 @@
 const mongoose = require("mongoose");
+const logger = require("../utils/logger");
 
 const dbConnection = () => {
   mongoose.connect(process.env.DB_URL).then((conn) => {
-    console.log(`Database Connected: ${conn.connection.host}`);
+    logger.info(`Database Connected: ${conn.connection.host}`);
   });
 };
 

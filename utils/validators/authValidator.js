@@ -49,18 +49,16 @@ exports.signupValidator = [
     .withMessage("Password confirmation is required"),
 
   check("phone")
-  .notEmpty()
-  .withMessage("Phone number is required")
-  .isMobilePhone("any") 
-  .withMessage("Invalid phone number")
-  .custom(async (val) => {
-    const user = await User.findOne({ phone: val });
-    if (user) {
-      throw new Error("Phone number already in use");
-    }
-  })
-,
-
+    .notEmpty()
+    .withMessage("Phone number is required")
+    .isMobilePhone("any")
+    .withMessage("Invalid phone number")
+    .custom(async (val) => {
+      const user = await User.findOne({ phone: val });
+      if (user) {
+        throw new Error("Phone number already in use");
+      }
+    }),
   check("profileImg").optional().isString(),
   check("role").optional().isIn(["user", "admin"]),
 

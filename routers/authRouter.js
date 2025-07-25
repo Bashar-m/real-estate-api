@@ -1,6 +1,6 @@
 const express = require("express");
 
-const { signup, login, verifyEmailCode } = require("../services/authServices");
+const { signup,signupSendOtp, login, verifyEmailCode } = require("../services/authServices");
 
 const {
   signupValidator,
@@ -21,13 +21,44 @@ const {
 
 const protect = require("../middlewares/protect");
 
+// ✅ import rate limiters
+const {
+  signupLimiter,
+  loginLimiter,
+  forgotPasswordLimiter,
+  verifyEmailCodeLimiter,
+  verifyResetCodeLimiter,
+} = require("../middlewares/rateLimiters");
+
 const router = express.Router();
 
-router.post("/signup", signupValidator, signup);
-router.post("/verify-email-code", protect, verifyEmailCode);
-router.post("/login", loginValidator, login);
-router.post("/forgotPassword",forgotPasswordValidator , forgotPassword);
-router.post("/verifyResetCode", protect,resetPasswordValidator, verifyPassResetCode);
-router.put("/resetPassword", protect, verifyPassResetCodeValidator,resetPassword);
+router.post("/signup", signupLimiter, signup);
+router.post("/signup/send-otp" ,signupSendOtp )
+router.post(
+  "/verify-email-code",
+  protect,
+  verifyEmailCodeLimiter,
+  verifyEmailCode
+);
+router.post("/login", loginLimiter, loginValidator, login);
+router.post(
+  "/forgotPassword",
+  forgotPasswordLimiter,
+  forgotPasswordValidator,
+  forgotPassword
+);
+router.post(
+  "/verifyResetCode",
+  protect,
+  verifyResetCodeLimiter,
+  resetPasswordValidator,
+  verifyPassResetCode
+);
+router.put(
+  "/resetPassword",
+  protect,
+  verifyPassResetCodeValidator,
+  resetPassword
+);
 
 module.exports = router;

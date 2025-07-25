@@ -169,9 +169,8 @@ exports.updateLoggedUserValidator = [
     }),
 
   check("phone")
-    .notEmpty()
-    .withMessage("Phone number is required")
-    .isMobilePhone()
+    .optional()
+    .isMobilePhone("any")
     .withMessage("Invalid phone number")
     .custom(async (val) => {
       const user = await User.findOne({ phone: val });

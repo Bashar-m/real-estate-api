@@ -28,7 +28,7 @@ router
 router
   .route("/:id")
   .get(getCategoryValidator, getCategoryById)
-  .put(protect, allowedTo("admin"), updateCategoryValidator, updateCategoryById)
+  .patch(protect, allowedTo("admin"), updateCategoryValidator, updateCategoryById)
   .delete(
     protect,
     allowedTo("admin"),

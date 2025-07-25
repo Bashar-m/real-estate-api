@@ -35,7 +35,7 @@ router.route("/").post(
 router
   .route("/:id")
   .get(getApartmentValidator, getApartmentById)
-  .put(
+  .patch(
     protect,
     allowedTo("admin"),
     updateApartmentValidator,

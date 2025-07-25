@@ -46,9 +46,7 @@ exports.getAll = (Model) =>
 
     const docs = await features.mongooseQuery;
 
-    if (!docs || docs.length === 0) {
-      return next(new ApiError("No data found", 404));
-    }
+  
 
     res.status(200).json({
       status: "success",

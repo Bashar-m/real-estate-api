@@ -19,7 +19,7 @@ router
 
 router
   .route("/:id")
-  .put(protect, allowedTo("admin"), updateAboutUsById)
+  .patch(protect, allowedTo("admin"), updateAboutUsById)
   .delete(protect, allowedTo("admin"), deleteAboutUsById);
 
 module.exports = router;
