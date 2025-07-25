@@ -85,11 +85,13 @@ const apartmentSchema = new mongoose.Schema(
     toJSON: {
       virtuals: true,
       transform: (doc, ret) => {
-        let lat = ret.location.coordinates[0];
-        let lng = ret.location.coordinates[1];
+        let lng = ret.location.coordinates[0];
+        let lat = ret.location.coordinates[1];
+
         delete ret.location.coordinates;
-        ret.location.lat = lat;
         ret.location.lng = lng;
+        ret.location.lat = lat;
+        return ret;
       },
     },
   }
@@ -100,7 +102,7 @@ apartmentSchema.index({ location: "2dsphere" });
 const setImageURL = (doc) => {
   if (doc.images) {
     const imageUrl = `${process.env.BASE_URL}/apartments/${doc.image}`;
-    doc.image = imageUrl;
+    doc.images = imageUrl;
   }
 };
 apartmentSchema.post("init", (doc) => {
