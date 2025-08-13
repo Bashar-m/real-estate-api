@@ -4,6 +4,7 @@ const {
   createUser,
   getUsers,
   getUserById,
+  getUserByIdForUser,
   updateUser,
   changeUserPassword,
   deleteUser,
@@ -30,7 +31,7 @@ const router = express.Router();
 // ************************** [User] **************************
 router.use(protect);
 
-router.get("/getMe", getLoggedUserData, getUserById);
+router.get("/getMe", getLoggedUserData, getUserByIdForUser);
 router.put(
   "/changeMyPassword",
   changeUserPasswordValidator,

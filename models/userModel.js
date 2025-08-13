@@ -21,6 +21,10 @@ const userSchema = new mongoose.Schema(
     phone: {
       type: String,
     },
+    phoneCountryCode: {
+      type: String, // مثال: +963 أو +966
+      required: true,
+    },
     profileImg: {
       type: [String],
     },
@@ -30,6 +34,8 @@ const userSchema = new mongoose.Schema(
       minlength: [6, "Too short password"],
     },
     passwordChangedAt: Date,
+
+    // حقول إعادة تعيين كلمة المرور (Password Reset)
     passwordResetCode: String,
     passwordResetExpires: Date,
     passwordResetVerified: Boolean,
@@ -38,6 +44,12 @@ const userSchema = new mongoose.Schema(
       default: 0,
     },
     passwordResetLockedUntil: Date,
+    passwordResetRequestCount: {
+      type: Number,
+      default: 0,
+    },
+    passwordResetLastSentAt: Date,
+    passwordResetNextAllowedAt: Date,
 
     role: {
       type: String,
@@ -48,14 +60,8 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
-    // child reference (one to many)
-    wishlist: [
-      {
-        type: mongoose.Schema.ObjectId,
-        ref: "Apartment",
-      },
-    ],
 
+    // حقول التحقق من البريد الإلكتروني (Email Verification)
     emailVerificationCode: String,
     emailVerificationExpires: Date,
     isEmailVerified: {
@@ -71,11 +77,24 @@ const userSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+
+    // حقول إدارة طلبات OTP وتأخيرها (لتحقق البريد مثلاً)
+    otpRequestCount: {
+      type: Number,
+      default: 0,
+    },
+    otpLastSentAt: Date,
+    otpNextAllowedAt: Date,
+
+    // اختياري: تخزين توقيت المستخدم المحلي
+    timezone: {
+      type: String,
+      default: "UTC",
+    },
   },
   {
     timestamps: true,
 
-    //هون مشان رجع الرد بدون ال __v
     toJSON: {
       transform: function (doc, ret) {
         delete ret.__v;
@@ -101,14 +120,12 @@ userSchema.post("init", (doc) => {
   setImageURL(doc);
 });
 
-// create
 userSchema.post("save", (doc) => {
   setImageURL(doc);
 });
 
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
-  // Hashing user password
   this.password = await bcrypt.hash(this.password, 12);
   next();
 });

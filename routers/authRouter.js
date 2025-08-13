@@ -37,7 +37,7 @@ router.post("/signup/send-otp" ,signupSendOtp )
 router.post(
   "/verify-email-code",
   protect,
-  verifyEmailCodeLimiter,
+  // verifyEmailCodeLimiter, 
   verifyEmailCode
 );
 router.post("/login", loginLimiter, loginValidator, login);
@@ -49,16 +49,10 @@ router.post(
 );
 router.post(
   "/verifyResetCode",
-  protect,
   verifyResetCodeLimiter,
   resetPasswordValidator,
   verifyPassResetCode
 );
-router.put(
-  "/resetPassword",
-  protect,
-  verifyPassResetCodeValidator,
-  resetPassword
-);
+
 
 module.exports = router;

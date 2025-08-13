@@ -3,7 +3,6 @@ const asyncHandler = require("express-async-handler");
 const ApiError = require("../utils/apiError");
 const User = require("../models/userModel");
 const sendEmail = require("../utils/sendEmail");
-const createToken = require("../utils/creatToken");
 
 // 📩 إرسال كود إعادة تعيين كلمة المرور عبر البريد
 exports.forgotPassword = asyncHandler(async (req, res, next) => {
@@ -12,7 +11,17 @@ exports.forgotPassword = asyncHandler(async (req, res, next) => {
     return next(new ApiError("There is no user for this E-mail", 404));
   }
 
+  // تحقق من الوقت المسموح به لكود إعادة تعيين كلمة المرور
+  if (user.passwordResetNextAllowedAt && user.passwordResetNextAllowedAt > Date.now()) {
+    return res.status(200).json({
+      status: "failure",
+      message: "You need to wait before requesting a new password reset code.",
+      nextRequestAt: new Date(user.passwordResetNextAllowedAt).toISOString(),
+    });
+  }
+
   const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+  console.log(resetCode);
   const hashedResetCode = crypto
     .createHash("sha256")
     .update(resetCode)
@@ -23,6 +32,18 @@ exports.forgotPassword = asyncHandler(async (req, res, next) => {
   user.passwordResetVerified = false;
   user.passwordResetAttempts = 0;
   user.passwordResetLockedUntil = undefined;
+
+  // جدول التأخير لإعادة تعيين كلمة المرور (10د، 15د، 30د، يوم كامل)
+  const delaySchedule = [10, 15, 30, 1440];
+  const currentCount = user.passwordResetRequestCount || 0;
+  const delayIndex = currentCount % delaySchedule.length;
+  const delayInMs = delaySchedule[delayIndex] * 60 * 1000;
+
+  const nextAllowedTime = Date.now() + delayInMs;
+
+  user.passwordResetRequestCount = currentCount + 1;
+  user.passwordResetLastSentAt = Date.now();
+  user.passwordResetNextAllowedAt = nextAllowedTime;
 
   try {
     await user.save();
@@ -59,35 +80,43 @@ exports.forgotPassword = asyncHandler(async (req, res, next) => {
       subject: "Your password reset code (valid for 10 min)",
       html: htmlMessage,
     });
-    const token = createToken(user._id);
+
     res.status(200).json({
+      status: "success",
       message: `Reset code sent to email: ${user.email}`,
-      token,
+      nextRequestAt: new Date(nextAllowedTime).toISOString(),
     });
   } catch (err) {
+    // في حالة الخطأ قم بمسح بيانات إعادة التعيين فقط
     user.passwordResetCode = undefined;
     user.passwordResetExpires = undefined;
     user.passwordResetVerified = undefined;
+    user.passwordResetRequestCount = undefined;
+    user.passwordResetLastSentAt = undefined;
+    user.passwordResetNextAllowedAt = undefined;
     await user.save({ validateBeforeSave: false });
 
     return next(new ApiError("Error in sending reset code", 500));
   }
 });
 
-// ✅ التحقق من كود إعادة التعيين
-exports.verifyPassResetCode = asyncHandler(async (req, res, next) => {
-  const hashedResetCode = crypto
-    .createHash("sha256")
-    .update(req.body.resetCode)
-    .digest("hex");
 
-  const user = await User.findOne({
-    passwordResetCode: hashedResetCode,
-    passwordResetExpires: { $gt: Date.now() },
-  });
+// ✅ التحقق من كود إعادة التعيين وتعيين كلمة المرور الجديدة
+exports.verifyPassResetCode = asyncHandler(async (req, res, next) => {
+  const { email, resetCode, newPassword, confirmPassword } = req.body;
+
+  if (!email || !resetCode || !newPassword || !confirmPassword) {
+    return next(new ApiError("All fields are required", 400));
+  }
+
+  if (newPassword !== confirmPassword) {
+    return next(new ApiError("Passwords do not match", 400));
+  }
+
+  const user = await User.findOne({ email });
 
   if (!user) {
-    return next(new ApiError("Reset Code invalid or expired", 400));
+    return next(new ApiError("User not found with this email", 404));
   }
 
   if (
@@ -104,7 +133,16 @@ exports.verifyPassResetCode = asyncHandler(async (req, res, next) => {
     );
   }
 
-  if (user.passwordResetCode !== hashedResetCode) {
+  const hashedResetCode = crypto
+    .createHash("sha256")
+    .update(resetCode)
+    .digest("hex");
+
+  if (
+    user.passwordResetCode !== hashedResetCode ||
+    !user.passwordResetExpires ||
+    user.passwordResetExpires < Date.now()
+  ) {
     user.passwordResetAttempts = (user.passwordResetAttempts || 0) + 1;
 
     if (user.passwordResetAttempts >= 5) {
@@ -121,43 +159,20 @@ exports.verifyPassResetCode = asyncHandler(async (req, res, next) => {
     }
 
     await user.save();
-    return next(new ApiError("Reset Code invalid", 400));
+    return next(new ApiError("Reset Code invalid or expired", 400));
   }
 
+  user.password = newPassword;
+  user.passwordResetCode = undefined;
+  user.passwordResetExpires = undefined;
   user.passwordResetVerified = true;
   user.passwordResetAttempts = 0;
   user.passwordResetLockedUntil = undefined;
-  await user.save();
 
-  const token = createToken(user._id);
+  await user.save();
 
   res.status(200).json({
     status: "success",
-    token,
-  });
-});
-
-// 🔒 إعادة تعيين كلمة المرور بعد التحقق (يتطلب توكن)
-exports.resetPassword = asyncHandler(async (req, res, next) => {
-  const user = req.user;
-
-  if (!user.passwordResetVerified) {
-    return next(new ApiError("Reset Code not Verified", 400));
-  }
-
-  user.password = req.body.newPassword;
-  user.passwordResetCode = undefined;
-  user.passwordResetExpires = undefined;
-  user.passwordResetVerified = undefined;
-  user.passwordResetAttempts = 0;
-  user.passwordResetLockedUntil = undefined;
-
-  await user.save();
-
-  const token = createToken(user._id);
-
-  res.status(200).json({
     message: "Password reset successfully.",
-    token,
   });
 });

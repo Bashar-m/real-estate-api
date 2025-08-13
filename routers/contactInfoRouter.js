@@ -3,6 +3,7 @@ const express = require("express");
 const {
   creatContactInfo,
   getContactInfo,
+  getContactInfo2,
   updateContactInfoById,
   deleteContactInfoById,
 } = require("../services/contactInfoServices");

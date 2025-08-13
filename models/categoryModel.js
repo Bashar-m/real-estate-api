@@ -4,6 +4,7 @@ const categorySchema = new mongoose.Schema(
   {
     name: {
       type: String,
+      enum:["buy","rent"],
       required: [true, 'Category required'],
       unique: [true, 'Category must be unique'],
       minlength: [2, 'Too short category name'],

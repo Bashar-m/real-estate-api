@@ -19,19 +19,23 @@ const {
 } = require("../utils/validators/apartmentValidator");
 const allowedTo = require("../middlewares/allowedTo");
 const protect = require("../middlewares/protect");
+const parseCoordinatesMiddleware = require("../middlewares/parseCoordinates");
 
 const router = express.Router();
 
 router.route("/list").get(getApartmentList);
 router.route("/map").get(getApartmentByMap);
-router.route("/").post(
-  protect,
-  allowedTo("admin"), //new edit hear for auth
-  uploadApartmentImages,
-  resizeApartmentImages,
-  createApartmentValidator,
-  createApartment
-);
+router
+  .route("/")
+  .post(
+    protect,
+    allowedTo("admin"),
+    parseCoordinatesMiddleware,
+    uploadApartmentImages,
+    resizeApartmentImages,
+    createApartmentValidator,
+    createApartment
+  );
 router
   .route("/:id")
   .get(getApartmentValidator, getApartmentById)

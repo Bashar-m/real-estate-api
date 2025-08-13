@@ -172,12 +172,16 @@ exports.updateLoggedUserValidator = [
     .optional()
     .isMobilePhone("any")
     .withMessage("Invalid phone number")
-    .custom(async (val) => {
-      const user = await User.findOne({ phone: val });
-      if (user) {
-        throw new Error("Phone number already in use");
-      }
-    }),
+    // .custom(async (val) => {
+    //   const user = await User.findOne({ phone: val });
+    //   if (user) {
+    //     throw new Error("Phone number already in use");
+    //   }
+    //}),
+    ,
+    check("phoneCountryCode")
+    .optional()
+    ,
   validatorMiddleware,
 ];
 

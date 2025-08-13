@@ -81,24 +81,25 @@ class ApiFeatures {
   }
 
   paginate(countDocuments) {
-    const page = this.queryStringObj.page * 1 || 1;
-    const limit = this.queryStringObj.limit * 1 || 50;
-    const skip = (page - 1) * limit;
-    const endIndex = page * limit;
+  const page = this.queryStringObj.page * 1 || 1;
+  const limit = this.queryStringObj.limit * 1 || 50;
+  const skip = (page - 1) * limit;
+  const endIndex = page * limit;
 
-    const pagination = {
-      currentPage: page,
-      limit,
-      numberOfPages: Math.ceil(countDocuments / limit),
-    };
+  const pagination = {
+    currentPage: page,
+    limit,
+    numberOfPages: Math.ceil(countDocuments / limit),
+    totalResult: countDocuments, 
+  };
 
-    if (endIndex < countDocuments) pagination.next = page + 1;
-    if (skip > 0) pagination.prev = page - 1;
+  if (endIndex < countDocuments) pagination.next = page + 1;
+  if (skip > 0) pagination.prev = page - 1;
 
-    this.mongooseQuery = this.mongooseQuery.skip(skip).limit(limit);
-    this.paginationResult = pagination;
-    return this;
-  }
+  this.mongooseQuery = this.mongooseQuery.skip(skip).limit(limit);
+  this.paginationResult = pagination;
+  return this;
+}
 
   getFilterObject() {
     return this.filterObj;

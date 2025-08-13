@@ -5,7 +5,8 @@ const authRoute = require("./authRouter");
 const aboutUsRoute = require("./aboutUsRouter");
 const contactInfoRouter = require("./contactInfoRouter");
 const wishlistRouter = require("./wishlistRouter");
-
+const cityRouter = require("./cityRouter");
+const sellersRouter = require("./sellersRouter");
 const mountRoutes = (app) => {
   app.use("/api/v1/categories", categoryRoute);
   app.use("/api/v1/apartments", apartmentRoute);
@@ -14,6 +15,8 @@ const mountRoutes = (app) => {
   app.use("/api/v1/aboutUs", aboutUsRoute);
   app.use("/api/v1/contact-info", contactInfoRouter);
   app.use("/api/v1/wishlist", wishlistRouter);
+  app.use("/api/v1/city", cityRouter);
+  app.use("/api/v1/sellers", sellersRouter);
 };
 
 module.exports = mountRoutes;

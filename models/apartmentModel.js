@@ -22,22 +22,58 @@ const apartmentSchema = new mongoose.Schema(
       type: Number,
       required: [true, "Price is required"],
     },
-    city: {
+    neighborhood: {
       type: String,
+    },
+    city: {
+      type: mongoose.Schema.ObjectId,
+      ref: "City",
       required: [true, "City is required"],
     },
-    district: {
-      type: String,
-      required: [true, "District is required"],
-    },
+    //remove
+    // district: {
+    //   type: String,
+    //   required: [true, "District is required"],
+    // },
+
+    //bye and rent
     category: {
-      type: mongoose.Schema.ObjectId,
-      ref: "Category",
+      type: String,
+      enum: ["buy", "rent"],
       required: [true, "Apartment must belong to a category"],
     },
+    sellers: {
+      type: mongoose.Schema.ObjectId,
+      ref: "Sellers",
+      required: [true, "Sellers info is required"],
+    },
+
+    //enum
     property_type: {
       type: String,
+      enum: [
+        "apartment",
+        "villa",
+        "land",
+        "agricultural-Land",
+        "industrial-Land",
+        "farm",
+        "shop",
+        "architecture",
+      ],
       required: [true, "Property type is required"],
+    },
+    property_deed_type: {
+      type: String,
+      required: true,
+      enum: [
+        "green",
+        "courtRolling",
+        "municipal",
+        "farm",
+        "industrial",
+        "aqricvltural",
+      ],
     },
     property_size: {
       type: Number,
@@ -62,12 +98,10 @@ const apartmentSchema = new mongoose.Schema(
       enum: ["available", "rented", "sold"],
       default: "available",
     },
-    interestedUsers: [
-      {
-        type: mongoose.Schema.ObjectId,
-        ref: "User",
-      },
-    ],
+    isFavorite: {
+      type: Boolean,
+    },
+
     location: {
       type: {
         type: String,
@@ -94,17 +128,30 @@ const apartmentSchema = new mongoose.Schema(
         return ret;
       },
     },
+    toObject: {
+      transform: (doc, ret) => {
+        let lng = ret.location.coordinates[0];
+        let lat = ret.location.coordinates[1];
+
+        delete ret.location.coordinates;
+        ret.location.lng = lng;
+        ret.location.lat = lat;
+        return ret;
+      },
+    },
   }
 );
 
 apartmentSchema.index({ location: "2dsphere" });
 
 const setImageURL = (doc) => {
-  if (doc.images) {
-    const imageUrl = `${process.env.BASE_URL}/apartments/${doc.image}`;
-    doc.images = imageUrl;
+  if (Array.isArray(doc.images)) {
+    doc.images = doc.images.map(
+      (img) => `${process.env.BASE_URL}/apartments/${img}`
+    );
   }
 };
+
 apartmentSchema.post("init", (doc) => {
   setImageURL(doc);
 });
@@ -114,3 +161,4 @@ apartmentSchema.post("save", (doc) => {
   setImageURL(doc);
 });
 module.exports = mongoose.model("Apartment", apartmentSchema);
+//نوع العقار و الفئه فلتره

@@ -1,9 +1,9 @@
-
 const asyncHandler = require("express-async-handler");
 const { v4: uuidv4 } = require("uuid");
 const sharp = require("sharp");
 
 const Apartment = require("../models/apartmentModel");
+const Wishlist = require("../models/wishlistModel");
 const {
   createOne,
   getAll,
@@ -44,20 +44,157 @@ exports.resizeApartmentImages = asyncHandler(async (req, res, next) => {
 });
 
 exports.createApartment = createOne(Apartment);
-exports.getApartmentList = getAll(Apartment);
+
+//******************  ----->>>>[ME]<<<<---- ****************** */
+
+// exports.getApartmentList = asyncHandler(async (req, res, next) => {
+//   const userId = req.user?._id; //? يعني ممكن  يكون undefind
+//   const { isFavorite, city } = req.query;
+
+//   let query;
+//   let countQuery;
+
+//   if (isFavorite === "true" && userId) {
+//     const wishlistItems = await Wishlist.find({ user: userId }).populate(
+//       "apartment"
+//     );
+//     const favoriteIds = wishlistItems.map((item) => item.apartment);
+
+//     query = Apartment.find({ _id: { $in: favoriteIds } });
+//     countQuery = Apartment.countDocuments({ _id: { $in: favoriteIds } });
+//   } else if (city) {
+//     query = Apartment.find({ city });
+//     countQuery = Apartment.countDocuments({ city });
+//   } else {
+//     query = Apartment.find().populate("city");
+//     countQuery = Apartment.countDocuments();
+//   }
+
+//   const features = new ApiFeatures(query, req.query)
+//     .filter()
+//     .sort()
+//     .search()
+//     .limitfields();
+
+//   const countDocuments = await countQuery;
+//   features.paginate(countDocuments);
+
+//   const apartments = await features.mongooseQuery;
+
+//   let apartmentsWithFavorite;
+//   if (userId) {
+//     const wishlistItems = await Wishlist.find({ user: userId }).populate(
+//       "apartment"
+//     );
+//     const favoriteIds = wishlistItems.map((item) => item.apartment.toString());
+
+//     apartmentsWithFavorite = apartments.map((apartments) => {
+//       const isFav = favoriteIds.includes(apartments._id.toString());
+//       return {
+//         ...apartments.toObject(),
+//         isFavorite: isFav,
+//       };
+//     });
+//   } else {
+//     apartmentsWithFavorite.map((apartments) => {
+//       apartments.toObject();
+//     });
+//   }
+
+//   res.status(200).json({
+//     status: "success",
+//     resulte: apartmentsWithFavorite.length,
+//     totalResult: countDocuments,
+//     pagination: {
+//       ...features.paginationResult,
+//     },
+//     data: apartmentsWithFavorite,
+//   });
+// });
+
+exports.getApartmentList = asyncHandler(async (req, res, next) => {
+  const userId = req.user?._id; // ✅ قد يكون undefined إذا ما في تسجيل دخول
+  const { isFavorite, city } = req.query;
+
+  let query;
+  let countQuery;
+
+  if (isFavorite === "true" && userId) {
+    // ✅ فقط إذا المستخدم مسجل دخول
+    const wishlistItems = await Wishlist.find({ user: userId }).select(
+      "apartment"
+    );
+    const favoriteIds = wishlistItems.map((item) => item.apartment);
+
+    query = Apartment.find({ _id: { $in: favoriteIds } });
+    countQuery = Apartment.countDocuments({ _id: { $in: favoriteIds } });
+  } else if (city) {
+    query = Apartment.find({ city });
+    countQuery = Apartment.countDocuments({ city });
+  } else {
+    query = Apartment.find().populate("city");
+    countQuery = Apartment.countDocuments();
+  }
+
+  const features = new ApiFeatures(query, req.query)
+    .filter()
+    .search()
+    .applyFilters() // 🔹 عشان يطبق الـ find(this.filterObj)
+    .sort()
+    .limitfields();
+
+  const countDocuments = await countQuery;
+  features.paginate(countDocuments);
+
+  const apartments = await features.mongooseQuery;
+
+  let apartmentsWithFavorite;
+
+  if (userId) {
+    // ✅ أضف isFavorite فقط إذا في user
+    const wishlistItems = await Wishlist.find({ user: userId }).select(
+      "apartment"
+    );
+    const favoriteIds = wishlistItems.map((item) => item.apartment.toString());
+
+    apartmentsWithFavorite = apartments.map((apartment) => {
+      const isFav = favoriteIds.includes(apartment._id.toString());
+      return {
+        ...apartment.toObject(),
+        isFavorite: isFav,
+      };
+    });
+  } else {
+    // ✅ بدون isFavorite
+    apartmentsWithFavorite = apartments.map((apartment) =>
+      apartment.toObject()
+    );
+  }
+
+  res.status(200).json({
+    status: "success",
+    //skip not working
+    results: apartmentsWithFavorite.length,
+    totalResult: countDocuments,
+    pagination: {
+      ...features.paginationResult,
+    },
+    data: apartmentsWithFavorite,
+  });
+});
+
 exports.getApartmentById = getOne(Apartment);
 exports.updateapartmentById = updateOne(Apartment);
 exports.deleteApartmentById = deleteOne(Apartment);
 
 exports.getApartmentByMap = asyncHandler(async (req, res, next) => {
-  let { lng, lat, distance } = req.query;
+  let { lng, lat, distance, city } = req.query;
 
   if (!lng || !lat || !distance) {
     return next(
       new ApiError("Please provide longitude, latitude, and distance", 400)
     );
   }
-
   lng = parseFloat(lng);
   lat = parseFloat(lat);
   distance = parseFloat(distance);
@@ -71,32 +208,26 @@ exports.getApartmentByMap = asyncHandler(async (req, res, next) => {
     );
   }
 
+  // تحويل المسافة إلى نصف قطر كروي (كيلومترات)
   const radius = distance / 6378.1;
 
   const geoFilter = {
     location: {
-      $geoWithin: { $centerSphere: [[lng, lat], radius] },
+      $geoWithin: {
+        $centerSphere: [[lng, lat], radius],
+      },
     },
   };
 
-  const features = new ApiFeatures(Apartment.find(geoFilter), req.query)
-    .filter()
-    .sort()
-    .search()
-    .limitfields();
+  if (city) {
+    geoFilter.city = city;
+  }
 
-  const countDocuments = await Apartment.countDocuments({
-    ...geoFilter,
-    ...features.getFilterObject(),
-  });
-
-  features.paginate(countDocuments);
-  const apartments = await features.mongooseQuery;
+  const apartments = await Apartment.find(geoFilter).populate("city");
 
   res.status(200).json({
     status: "success",
     results: apartments.length,
-    pagination: features.paginationResult,
     data: apartments,
   });
 });

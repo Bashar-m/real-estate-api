@@ -1,75 +1,59 @@
 const asyncHandler = require("express-async-handler");
-const User = require("../models/userModel");
+const Wishlist = require("../models/wishlistModel");
 const Apartment = require("../models/apartmentModel");
 
+// ➕ إضافة إلى المفضلة
 exports.addToWishlist = asyncHandler(async (req, res, next) => {
-  const user = await User.findByIdAndUpdate(
-    req.user._id,
-    {
-      $addToSet: {
-        wishlist: req.body.apartmentId,
-      },
-    },
-    {
-      new: true,
-    }
+  const { apartmentId } = req.body;
+
+  await Wishlist.findOneAndUpdate(
+    { user: req.user._id, apartment: apartmentId },
+    {},
+    { upsert: true, new: true, setDefaultsOnInsert: true }
   );
 
-  await Apartment.findByIdAndUpdate(req.body.apartmentId, {
-    $addToSet: {
-      interestedUsers: req.user._id,
-    },
-  });
+  await Apartment.findOneAndUpdate({isFavorite : true});
 
-  res
-    .status(201)
-    .json({ message: "Added to wishlist", wishlist: user.wishlist });
+  res.status(201).json({ message: "Added to wishlist" });
 });
 
+// ➖ إزالة من المفضلة
 exports.removeFromWishlist = asyncHandler(async (req, res, next) => {
-  const user = await User.findByIdAndUpdate(
-    req.user._id,
+  const { apartmentId } = req.params;
 
-    { $pull: { wishlist: req.params.apartmentId } },
-    { new: true }
-  );
-
-  await Apartment.findByIdAndUpdate(
-    req.params.apartmentId,
-    {
-      $pull: { interestedUsers: req.user._id },
-    },
-    { new: true }
-  );
-
-  res.status(200).json({
-    message: "Removed from wishlist",
-    wishlist: user.wishlist,
+  await Wishlist.findOneAndDelete({
+    user: req.user._id,
+    apartment: apartmentId,
   });
+
+  res.status(200).json({ message: "Removed from wishlist" });
 });
 
+// 📄 جلب المفضلة مع Pagination وإرجاع الشقق فقط
 exports.getWishlist = asyncHandler(async (req, res, next) => {
   const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 50;
+  const limit = parseInt(req.query.limit) || 10;
   const skip = (page - 1) * limit;
 
-  const user = await User.findById(req.user._id).populate({
-    path: "wishlist",
-    select: "-interestedUsers",
-  });
+  const totalItems = await Wishlist.countDocuments({ user: req.user._id });
 
-  const totalItems = user.wishlist.length;
-  const paginatedWishlist = user.wishlist.slice(skip, skip + limit);
+  const wishlistDocs = await Wishlist.find({ user: req.user._id })
+    .populate("apartment")
+    .skip(skip)
+    .limit(limit);
+
   const numberOfPages = Math.ceil(totalItems / limit);
+
+  const apartments = wishlistDocs.map((doc) => doc.apartment);
 
   res.status(200).json({
     status: "success",
-    results: paginatedWishlist.length,
+    results: apartments.length,
     pagination: {
       currentPage: page,
       limit,
       numberOfPages,
     },
-    data: paginatedWishlist,
+    data: apartments,
   });
 });

@@ -6,7 +6,7 @@ const asyncHandler = require("express-async-handler");
 const ApiError = require("../utils/apiError");
 const createToken = require("../utils/creatToken");
 const User = require("../models/userModel");
-
+const { sanitizeUser } = require("../utils/sanitizeData");
 const {
   createOne,
   getAll,
@@ -44,6 +44,11 @@ exports.createUser = createOne(User);
 exports.getUsers = getAll(User);
 
 exports.getUserById = getOne(User);
+exports.getUserByIdForUser = asyncHandler(async (req, res, next) => {
+  const document = await User.findById(req.params.id);
+  if (!document) return next(new ApiError("No document found", 404));
+  res.status(200).json({ status: "success", data: sanitizeUser(document) });
+});
 
 exports.updateUser = asyncHandler(async (req, res, next) => {
   const document = await User.findByIdAndUpdate(
@@ -65,7 +70,7 @@ exports.updateUser = asyncHandler(async (req, res, next) => {
     return next(new ApiError(`No document  for this id:${req.params.id}`), 404);
   }
 
-  res.status(200).json({ data: document });
+  res.status(200).json({ data: sanitizeUser(document) });
 });
 
 exports.changeUserPassword = asyncHandler(async (req, res, next) => {
@@ -83,7 +88,7 @@ exports.changeUserPassword = asyncHandler(async (req, res, next) => {
     return next(new ApiError(`No document  for this id:${req.params.id}`), 404);
   }
 
-  res.status(200).json({ data: document });
+  res.status(200).json({ data: sanitizeUser(document) });
 });
 
 exports.deleteUser = deleteOne(User);
@@ -111,7 +116,7 @@ exports.updateLoggedUserPass = asyncHandler(async (req, res, next) => {
 
   const token = createToken(user._id);
 
-  res.status(200).json({ data: user, token });
+  res.status(200).json({ data: sanitizeUser(user), token });
 });
 
 exports.updateLoggedUserData = asyncHandler(async (req, res, next) => {
@@ -120,11 +125,12 @@ exports.updateLoggedUserData = asyncHandler(async (req, res, next) => {
     {
       name: req.body.name,
       phone: req.body.phone,
+      phoneCountryCode: req.body.phoneCountryCode,
     },
     { new: true }
   );
 
-  res.status(200).json({ data: updateuser });
+  res.status(200).json({ status: "success", data: sanitizeUser(updateuser) });
 });
 
 exports.deleteLoggedUserData = asyncHandler(async (req, res, next) => {

@@ -2,19 +2,22 @@ const mongoose = require("mongoose");
 
 const ContactInfoSchema = new mongoose.Schema(
   {
-    phoneNumbers: [
-      {
+    
+      
         type: {
           type: String,
-          enum: ["call", "whatsapp", "telegram"],
+          enum: ["call", "whatsapp", "telegram","facebook","instagram"],
           required: true,
         },
-        number: {
+        value: {
           type: String,
           required: true,
         },
-      },
-    ],
+        title:{
+          type:String,
+          required: false,
+        },
+    
   },
   { timestamps: true }
 );

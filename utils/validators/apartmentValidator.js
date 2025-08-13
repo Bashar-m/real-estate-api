@@ -36,13 +36,11 @@ exports.createApartmentValidator = [
 
   check("city").notEmpty().withMessage("City is required"),
 
-  check("district").notEmpty().withMessage("District is required"),
+  //check("district").notEmpty().withMessage("District is required"),
 
   check("category")
     .notEmpty()
-    .withMessage("Category is required")
-    .isMongoId()
-    .withMessage("Invalid category ID"),
+    .withMessage("Category is required"),
 
   check("property_type").notEmpty().withMessage("Property type is required"),
 
@@ -83,18 +81,34 @@ exports.createApartmentValidator = [
     .withMessage("Location type must be 'Point'"),
 
   check("location.coordinates")
-    .isArray({ min: 2, max: 2 })
-    .withMessage("Coordinates must be [lng, lat]")
-    .custom((value) => {
-      const [lng, lat] = value;
-      if (typeof lng !== "number" || typeof lat !== "number") {
-        throw new Error("Coordinates must be numbers");
+  .custom((value, { req }) => {
+    let coords = value;
+
+    // تأكد أن الإحداثيات array وأرقام
+    if (typeof coords === "string") {
+      try {
+        coords = JSON.parse(coords);
+      } catch {
+        throw new Error("Coordinates must be a valid JSON array");
       }
-      if (lng < -180 || lng > 180 || lat < -90 || lat > 90) {
-        throw new Error("Invalid GPS coordinates");
-      }
-      return true;
-    }),
+    }
+
+    if (!Array.isArray(coords)) throw new Error("Coordinates must be an array");
+    if (coords.length !== 2) throw new Error("Coordinates must be [lng, lat]");
+
+    coords = coords.map(Number);
+    if (coords.some(isNaN)) throw new Error("Coordinates must be numbers");
+
+    const [lng, lat] = coords;
+    if (lng < -180 || lng > 180 || lat < -90 || lat > 90)
+      throw new Error("Invalid GPS coordinates");
+
+    // عدل القيمة في req.body
+    req.body.location.coordinates = coords;
+
+    return true;
+  }),
+
   validatorMiddleware,
 ];
 
