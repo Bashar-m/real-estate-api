@@ -8,6 +8,7 @@ const wishlistRouter = require("./wishlistRouter");
 const cityRouter = require("./cityRouter");
 const sellersRouter = require("./sellersRouter");
 const mountRoutes = (app) => {
+app.use(require("../middlewares/userMiddleware"));
   app.use("/api/v1/categories", categoryRoute);
   app.use("/api/v1/apartments", apartmentRoute);
   app.use("/api/v1/users", userRoute);

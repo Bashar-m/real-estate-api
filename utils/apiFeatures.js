@@ -104,6 +104,11 @@ class ApiFeatures {
   getFilterObject() {
     return this.filterObj;
   }
+
+
+  cloneQuery(){
+    return new ApiFeatures(this.mongooseQuery.clone() , {}).mongooseQuery;
+  }
 }
 
 module.exports = ApiFeatures;

@@ -116,8 +116,7 @@ exports.getApartmentList = asyncHandler(async (req, res, next) => {
   const userId = req.user?._id; // ✅ قد يكون undefined إذا ما في تسجيل دخول
   const { isFavorite, city } = req.query;
 
-  let query;
-  let countQuery;
+  let apiFeatures;
 
   if (isFavorite === "true" && userId) {
     // ✅ فقط إذا المستخدم مسجل دخول
@@ -125,28 +124,26 @@ exports.getApartmentList = asyncHandler(async (req, res, next) => {
       "apartment"
     );
     const favoriteIds = wishlistItems.map((item) => item.apartment);
-
-    query = Apartment.find({ _id: { $in: favoriteIds } });
-    countQuery = Apartment.countDocuments({ _id: { $in: favoriteIds } });
-  } else if (city) {
-    query = Apartment.find({ city });
-    countQuery = Apartment.countDocuments({ city });
+    apiFeatures = new ApiFeatures(
+      Apartment.find({ _id: { $in: favoriteIds.map((e) => e._id) } }).populate("city"),
+      {}
+    );
   } else {
-    query = Apartment.find().populate("city");
-    countQuery = Apartment.countDocuments();
+    apiFeatures = new ApiFeatures(Apartment.find().populate("city"), req.query);
   }
-
-  const features = new ApiFeatures(query, req.query)
+   
+  apiFeatures = apiFeatures
     .filter()
     .search()
     .applyFilters() // 🔹 عشان يطبق الـ find(this.filterObj)
     .sort()
     .limitfields();
 
-  const countDocuments = await countQuery;
-  features.paginate(countDocuments);
+  let count = apiFeatures.cloneQuery();
+  apiFeatures = apiFeatures.paginate();
 
-  const apartments = await features.mongooseQuery;
+  const apartments = await apiFeatures.mongooseQuery;
+  const p = await count.countDocuments();
 
   let apartmentsWithFavorite;
 
@@ -165,7 +162,6 @@ exports.getApartmentList = asyncHandler(async (req, res, next) => {
       };
     });
   } else {
-    // ✅ بدون isFavorite
     apartmentsWithFavorite = apartments.map((apartment) =>
       apartment.toObject()
     );
@@ -175,9 +171,9 @@ exports.getApartmentList = asyncHandler(async (req, res, next) => {
     status: "success",
     //skip not working
     results: apartmentsWithFavorite.length,
-    totalResult: countDocuments,
+    totalResult: p,
     pagination: {
-      ...features.paginationResult,
+      ...apiFeatures.paginationResult,
     },
     data: apartmentsWithFavorite,
   });
@@ -190,23 +186,23 @@ exports.deleteApartmentById = deleteOne(Apartment);
 exports.getApartmentByMap = asyncHandler(async (req, res, next) => {
   let { lng, lat, distance, city } = req.query;
 
-  if (!lng || !lat || !distance) {
-    return next(
-      new ApiError("Please provide longitude, latitude, and distance", 400)
-    );
-  }
+  // if (!lng || !lat || !distance) {
+  //   return next(
+  //     new ApiError("Please provide longitude, latitude, and distance", 400)
+  //   );
+  // }
   lng = parseFloat(lng);
   lat = parseFloat(lat);
   distance = parseFloat(distance);
 
-  if (isNaN(lng) || isNaN(lat) || isNaN(distance)) {
-    return next(
-      new ApiError(
-        "Longitude, latitude, and distance must be valid numbers",
-        400
-      )
-    );
-  }
+  // if (isNaN(lng) || isNaN(lat) || isNaN(distance)) {
+  //   return next(
+  //     new ApiError(
+  //       "Longitude, latitude, and distance must be valid numbers",
+  //       400
+  //     )
+  //   );
+  // }
 
   // تحويل المسافة إلى نصف قطر كروي (كيلومترات)
   const radius = distance / 6378.1;
@@ -223,7 +219,7 @@ exports.getApartmentByMap = asyncHandler(async (req, res, next) => {
     geoFilter.city = city;
   }
 
-  const apartments = await Apartment.find(geoFilter).populate("city");
+  const apartments = await Apartment.find().populate("city");
 
   res.status(200).json({
     status: "success",

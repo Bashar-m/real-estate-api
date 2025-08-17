@@ -3,7 +3,7 @@ const asyncHandler = require("express-async-handler");
 const User = require("../models/userModel");
 const ApiError = require("../utils/apiError");
 
-const protect = asyncHandler(async (req, res, next) => {
+const userMiddleware = asyncHandler(async (req, res, next) => {
   let token;
   if (
     req.headers.authorization &&
@@ -13,10 +13,6 @@ const protect = asyncHandler(async (req, res, next) => {
   }
   if (!token) {
     return next(
-      new ApiError(
-        "You are not logged in. Please login to access this route",
-        401
-      )
     );
   }
 
@@ -24,14 +20,13 @@ const protect = asyncHandler(async (req, res, next) => {
   try {
     decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
   } catch (err) {
-    return next(new ApiError("Invalid token", 401));
+    return next();
   }
 
   const currentUser = await User.findById(decoded.userId);
 
   if (!currentUser) {
     return next(
-      new ApiError("The user that belongs to this token no longer exists", 401)
     );
   }
 
@@ -42,15 +37,13 @@ const protect = asyncHandler(async (req, res, next) => {
     );
     if (passChangedTimestamp > decoded.iat) {
       return next(
-        new ApiError(
-          "User recently changed their password. Please login again.",
-          401
-        )
       );
     }
   }
 
+  req.user = currentUser;
+
   next();
 });
 
-module.exports = protect;
+module.exports = userMiddleware;
