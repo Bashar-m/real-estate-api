@@ -14,6 +14,7 @@ const versionMiddleware = (req, res, next) => {
 
   if (sem.lt(clientVersion, minVersion)) {
     return res.status(426).json({ 
+      code: "UPDATE", 
       message: `Client version ${clientVersion} is too old. Minimum supported version is ${minVersion}` 
     });
   }
