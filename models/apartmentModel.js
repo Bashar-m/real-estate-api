@@ -113,6 +113,16 @@ const apartmentSchema = new mongoose.Schema(
         required: [true, "Coordinates are required"],
       },
     },
+    // owner: {
+    //   type: String,
+    //   ref: "User",
+    //   required: false,
+    // },
+    // postStatus: {
+    //   type: String , 
+    //   enum: ['pending' , 'accepted' , 'rejected'],
+    //   required: true,
+    // }
   },
   {
     timestamps: true,

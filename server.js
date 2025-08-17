@@ -107,7 +107,7 @@ app.use(globalError);
 // 👇 Server
 // 🚀 تشغيل الخادم
 const PORT = process.env.PORT || 8080;
-const HOST = "192.168.1.107"; // مناسب للإنتاج
+const HOST = "0.0.0.0"; // مناسب للإنتاج
 
 const server = app.listen(PORT, HOST, () => {
   logger.info(`App running on http://${HOST}:${PORT}`);

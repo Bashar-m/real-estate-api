@@ -184,43 +184,13 @@ exports.updateapartmentById = updateOne(Apartment);
 exports.deleteApartmentById = deleteOne(Apartment);
 
 exports.getApartmentByMap = asyncHandler(async (req, res, next) => {
-  let { lng, lat, distance, city } = req.query;
-
-  // if (!lng || !lat || !distance) {
-  //   return next(
-  //     new ApiError("Please provide longitude, latitude, and distance", 400)
-  //   );
-  // }
-  lng = parseFloat(lng);
-  lat = parseFloat(lat);
-  distance = parseFloat(distance);
-
-  // if (isNaN(lng) || isNaN(lat) || isNaN(distance)) {
-  //   return next(
-  //     new ApiError(
-  //       "Longitude, latitude, and distance must be valid numbers",
-  //       400
-  //     )
-  //   );
-  // }
-
-  // تحويل المسافة إلى نصف قطر كروي (كيلومترات)
-  const radius = distance / 6378.1;
-
-  const geoFilter = {
-    location: {
-      $geoWithin: {
-        $centerSphere: [[lng, lat], radius],
-      },
-    },
-  };
-
-  if (city) {
-    geoFilter.city = city;
-  }
-
-  const apartments = await Apartment.find().populate("city");
-
+  let feature = new ApiFeatures(Apartment.find().populate("city") , req.query);
+  feature = feature.filter()
+    .search()
+    .applyFilters() // 🔹 عشان يطبق الـ find(this.filterObj)
+    .sort()
+    .limitfields();
+  let apartments = await feature.mongooseQuery;
   res.status(200).json({
     status: "success",
     results: apartments.length,
