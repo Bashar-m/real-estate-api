@@ -129,8 +129,8 @@ const apartmentSchema = new mongoose.Schema(
     toJSON: {
       virtuals: true,
       transform: (doc, ret) => {
-        let lng = ret.location.coordinates[0];
-        let lat = ret.location.coordinates[1];
+        let lng = ret.location.coordinates[1];
+        let lat = ret.location.coordinates[0];
 
         delete ret.location.coordinates;
         ret.location.lng = lng;
@@ -140,8 +140,8 @@ const apartmentSchema = new mongoose.Schema(
     },
     toObject: {
       transform: (doc, ret) => {
-        let lng = ret.location.coordinates[0];
-        let lat = ret.location.coordinates[1];
+        let lng = ret.location.coordinates[1];
+        let lat = ret.location.coordinates[0];
 
         delete ret.location.coordinates;
         ret.location.lng = lng;
@@ -157,7 +157,7 @@ apartmentSchema.index({ location: "2dsphere" });
 const setImageURL = (doc) => {
   if (Array.isArray(doc.images)) {
     doc.images = doc.images.map(
-      (img) => `${process.env.BASE_URL}/apartments/${img}`
+      (img) => `apartments/${img}`
     );
   }
 };
