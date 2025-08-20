@@ -66,9 +66,9 @@ exports.createApartmentValidator = [
     .isNumeric()
     .withMessage("Property age must be a number"),
 
-  check("images")
-    .isArray({ min: 1 })
-    .withMessage("At least one image is required"),
+  // check("images")
+  //   .isArray({ min: 1 })
+  //   .withMessage("At least one image is required"),
 
   check("status")
     .optional()

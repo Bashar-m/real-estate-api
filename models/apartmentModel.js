@@ -89,14 +89,29 @@ const apartmentSchema = new mongoose.Schema(
     property_age: {
       type: Number,
     },
-    images: {
-      type: [String],
-      required: [true, "At least one image is required"],
-    },
+    images: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Image",
+        required: true,
+      },
+    ],
     status: {
       type: String,
       enum: ["available", "rented", "sold"],
       default: "available",
+    },
+    //من   نشر الشقه
+    owner: {
+      type: mongoose.Schema.ObjectId,
+      ref: "User",
+      required: false,
+    },
+    // مراجعه الشقه قبل     النشر
+    postStatus: {
+      type: String,
+      enum: ["pending", "approved", "rejected"],
+      default: "pending",
     },
     isFavorite: {
       type: Boolean,
@@ -113,16 +128,6 @@ const apartmentSchema = new mongoose.Schema(
         required: [true, "Coordinates are required"],
       },
     },
-    // owner: {
-    //   type: String,
-    //   ref: "User",
-    //   required: false,
-    // },
-    // postStatus: {
-    //   type: String , 
-    //   enum: ['pending' , 'accepted' , 'rejected'],
-    //   required: true,
-    // }
   },
   {
     timestamps: true,
@@ -154,21 +159,19 @@ const apartmentSchema = new mongoose.Schema(
 
 apartmentSchema.index({ location: "2dsphere" });
 
-const setImageURL = (doc) => {
-  if (Array.isArray(doc.images)) {
-    doc.images = doc.images.map(
-      (img) => `apartments/${img}`
-    );
-  }
-};
+// const setImageURL = (doc) => {
+//   if (Array.isArray(doc.images)) {
+//     doc.images = doc.images.map((img) => `apartments/${img}`);
+//   }
+// };
 
-apartmentSchema.post("init", (doc) => {
-  setImageURL(doc);
-});
+// apartmentSchema.post("init", (doc) => {
+//   setImageURL(doc);
+// });
 
-// create
-apartmentSchema.post("save", (doc) => {
-  setImageURL(doc);
-});
+// // create
+// apartmentSchema.post("save", (doc) => {
+//   setImageURL(doc);
+// });
 module.exports = mongoose.model("Apartment", apartmentSchema);
 //نوع العقار و الفئه فلتره

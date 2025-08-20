@@ -14,6 +14,12 @@ const {
   updateLoggedUserPass,
   updateLoggedUserData,
   deleteLoggedUserData,
+  createUserApartment,
+  uploadApartmentImages,
+  getUserApartment,
+  deleteUserImage,
+  deleteUserApartment,
+  updateUserApartment,
 } = require("../services/userServices");
 const {
   createUserValidator,
@@ -25,6 +31,8 @@ const {
 } = require("../utils/validators/userValidator");
 const allowedTo = require("../middlewares/allowedTo");
 const protect = require("../middlewares/protect");
+
+const parseCoordinatesMiddleware = require("../middlewares/parseCoordinates");
 
 const router = express.Router();
 
@@ -39,6 +47,19 @@ router.put(
 );
 router.patch("/updateMe", updateLoggedUserValidator, updateLoggedUserData);
 router.delete("/deleteMe", deleteLoggedUserData);
+
+//**************************[User Apartment]************************** */
+router.post(
+  "/addApartment",
+  parseCoordinatesMiddleware,
+  uploadApartmentImages,
+  createUserApartment
+);
+
+router.get("/getApartment", getUserApartment);
+router.delete("/delete-image/:id", deleteUserImage);
+router.delete("/delete-apartment/:id", deleteUserApartment);
+router.patch("/update-apartment/:id", updateUserApartment);
 
 // ************************** [admin] **************************
 

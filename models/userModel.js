@@ -60,7 +60,12 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
-
+    myApartment: [
+      {
+        type: mongoose.Schema.ObjectId,
+        ref: "Apartment",
+      },
+    ],
     // حقول التحقق من البريد الإلكتروني (Email Verification)
     emailVerificationCode: String,
     emailVerificationExpires: Date,

@@ -8,7 +8,9 @@ const {
   updateapartmentById,
   deleteApartmentById,
   uploadApartmentImages,
-  resizeApartmentImages,
+  //resizeApartmentImages,
+  getApartmentImages,
+  addImagesToApartment,
 } = require("../services/apartmentServices");
 
 const {
@@ -25,17 +27,23 @@ const router = express.Router();
 
 router.route("/list").get(getApartmentList);
 router.route("/map").get(getApartmentByMap);
+router.route("/").post(
+  protect,
+  allowedTo("admin"),
+  parseCoordinatesMiddleware,
+  uploadApartmentImages,
+  // resizeApartmentImages,
+  createApartmentValidator,
+  createApartment
+);
+
+//IMAGE 
 router
-  .route("/")
-  .post(
-    protect,
-    allowedTo("admin"),
-    parseCoordinatesMiddleware,
-    uploadApartmentImages,
-    resizeApartmentImages,
-    createApartmentValidator,
-    createApartment
-  );
+  .route("/:id/images")
+  .post(uploadApartmentImages, addImagesToApartment)
+  .get(getApartmentImages)
+  
+
 router
   .route("/:id")
   .get(getApartmentValidator, getApartmentById)

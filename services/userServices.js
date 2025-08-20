@@ -1,3 +1,6 @@
+const fs = require("fs");
+const path = require("path");
+
 const { v4: uuidv4 } = require("uuid");
 const sharp = require("sharp");
 const bcrypt = require("bcryptjs");
@@ -6,7 +9,12 @@ const asyncHandler = require("express-async-handler");
 const ApiError = require("../utils/apiError");
 const createToken = require("../utils/creatToken");
 const User = require("../models/userModel");
-const { sanitizeUser } = require("../utils/sanitizeData");
+
+const {
+  sanitizeUser,
+  sanitizeUserApartment,
+} = require("../utils/sanitizeData");
+
 const {
   createOne,
   getAll,
@@ -14,8 +22,12 @@ const {
   deleteOne,
 } = require("../services/handlersFactory");
 
+const Apartment = require("../models/apartmentModel");
+const Image = require("../models/imageModel");
 const { uploadMixOfImages } = require("../middlewares/uploadImageMiddleware");
+const ApiFeatures = require("../utils/apiFeatures")
 
+//***************************************************************************** */
 //protect (Admin)
 // Multer & sharp middleware
 exports.uploadUserImages = uploadMixOfImages([
@@ -93,6 +105,8 @@ exports.changeUserPassword = asyncHandler(async (req, res, next) => {
 
 exports.deleteUser = deleteOne(User);
 
+//**********************************************************************************8 */
+
 //Logged User
 exports.getLoggedUserData = asyncHandler(async (req, res, next) => {
   req.params.id = req.user._id;
@@ -136,4 +150,153 @@ exports.updateLoggedUserData = asyncHandler(async (req, res, next) => {
 exports.deleteLoggedUserData = asyncHandler(async (req, res, next) => {
   await User.findByIdAndDelete(req.user._id);
   res.status(204).json({ message: "Acount is deleted" });
+});
+
+//******************************************************************************* */
+// C R U D (Apartmennt) For User And Hi SALEEEEEEEEEEEM (:D)
+exports.uploadApartmentImages = uploadMixOfImages([
+  { name: "images", maxCount: 20 },
+]);
+exports.createUserApartment = asyncHandler(async (req, res, next) => {
+  const userId = req.user._id;
+
+  const newApartment = await Apartment.create({ ...req.body, owner: userId });
+
+  const user = await User.findByIdAndUpdate(
+    userId,
+    { $push: { myApartment: newApartment._id } },
+    { new: true }
+  );
+
+  if (!user) {
+    return next(new ApiError("User not found", 404));
+  }
+
+  res.status(201).json({
+    status: "success",
+    data: newApartment,
+  });
+});
+
+exports.getUserApartment = asyncHandler(async (req, res, next) => {
+  const userId = req.user._id;
+
+ 
+  const user = await User.findById(userId);
+  if (!user) {
+    return next(new ApiError("User not found", 404));
+  }
+
+  
+  let apiFeatures = new ApiFeatures(
+    Apartment.find({ owner: userId }).populate("city"), 
+    req.query
+  )
+    .filter()
+    .search()
+    .applyFilters()
+    .sort()
+    .limitfields();
+
+ 
+  let countQuery = apiFeatures.cloneQuery();
+  const totalResult = await countQuery.countDocuments();
+
+ 
+  apiFeatures = apiFeatures.paginate(totalResult);
+
+  const apartments = await apiFeatures.mongooseQuery;
+
+  res.status(200).json({
+    status: "success",
+    results: apartments.length,
+    totalResult,
+    pagination: apiFeatures.paginationResult,
+    data: apartments,
+  });
+});
+
+
+exports.updateUserApartment = asyncHandler(async (req, res, next) => {
+  const userId = req.user._id;
+  const { id } = req.params;
+
+ 
+  const apartment = await Apartment.findOne({ _id: id, owner: userId });
+  if (!apartment) {
+    return next(new ApiError("Apartment not found", 404));
+  }
+
+ 
+  if (apartment.postStatus !== "pending") {
+    return next(
+      new ApiError("You can't update the apartment after it's approved or rejected", 400)
+    );
+  }
+
+
+  const updatedApartment = await Apartment.findByIdAndUpdate(id, req.body, {
+    new: true,
+    runValidators: true, 
+  });
+
+  res.status(200).json({
+    status: "success",
+    data: updatedApartment,
+  });
+});
+
+
+exports.deleteUserApartment = asyncHandler(async (req, res, next) => {
+  const apId = req.params.id;
+  const userId = req.user._id;
+
+  const apartment = await Apartment.findOneAndDelete({
+    _id: apId,
+    owner: userId,
+  });
+
+  if (!apartment) {
+    return next(new ApiError("Apartment not found or not authorized", 404));
+  }
+
+  if (apartment.images && apartment.images.length > 0) {
+    const images = await Image.find({ _id: { $in: apartment.images } });
+
+    for (const img of images) {
+      const filePath = path.join(__dirname, "../uploads/apartments", img.path);
+
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    }
+
+    await Image.deleteMany({ _id: { $in: apartment.images } });
+  }
+
+  await User.findByIdAndUpdate(userId, {
+    $pull: { myApartment: apId },
+  });
+
+  res.status(200).json({
+    status: "success",
+    message: "Apartment is deleted successfully",
+  });
+});
+
+exports.deleteUserImage = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+
+  // 1️⃣ نحذف الصورة
+  const image = await Image.findByIdAndDelete(id);
+  if (!image) {
+    return next(new ApiError(`Not found image with this id: ${id}`, 404));
+  }
+
+  await Apartment.updateMany({ images: id }, { $pull: { images: id } });
+
+  res.status(200).json({
+    status: "success",
+    message: "Image deleted and references removed from apartments",
+  });
 });

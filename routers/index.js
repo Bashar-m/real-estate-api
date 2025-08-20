@@ -7,6 +7,8 @@ const contactInfoRouter = require("./contactInfoRouter");
 const wishlistRouter = require("./wishlistRouter");
 const cityRouter = require("./cityRouter");
 const sellersRouter = require("./sellersRouter");
+const orderMngRoutre = require("./orderMngRoutre");
+
 const mountRoutes = (app) => {
   app.use(require("../middlewares/versionMiddleWare"));
   app.use(require("../middlewares/userMiddleware"));
@@ -19,6 +21,7 @@ const mountRoutes = (app) => {
   app.use("/api/v1/wishlist", wishlistRouter);
   app.use("/api/v1/city", cityRouter);
   app.use("/api/v1/sellers", sellersRouter);
+  app.use("/api/v1/post-order", orderMngRoutre);
 };
 
 module.exports = mountRoutes;

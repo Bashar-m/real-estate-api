@@ -9,3 +9,9 @@ exports.sanitizeUser = function (user) {
     isEmailVerified: user.isEmailVerified,
   };
 };
+
+exports.sanitizeUserApartment = function (user) {
+  return {
+    myApartment: user.myApartment,
+  };
+};
