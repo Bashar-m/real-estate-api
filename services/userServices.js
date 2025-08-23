@@ -263,13 +263,14 @@ exports.deleteUserApartment = asyncHandler(async (req, res, next) => {
   if (apartment.images && apartment.images.length > 0) {
     const images = await Image.find({ _id: { $in: apartment.images } });
 
-    for (const img of images) {
-      const filePath = path.join(__dirname, "../uploads/apartments", img.path);
-
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
-    }
+    await Promise.all(
+      images.map(async (img) => {
+        const filePath = path.join(__dirname, `../${img.path}`);
+        if (fs.existsSync(filePath)) {
+          await fs.promises.unlink(filePath);
+        }
+      })
+    );
 
     await Image.deleteMany({ _id: { $in: apartment.images } });
   }
@@ -283,6 +284,7 @@ exports.deleteUserApartment = asyncHandler(async (req, res, next) => {
     message: "Apartment is deleted successfully",
   });
 });
+
 
 exports.deleteUserImage = asyncHandler(async (req, res, next) => {
   const { id } = req.params;

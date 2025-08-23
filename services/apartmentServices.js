@@ -1,3 +1,6 @@
+const fs = require("fs");
+const path = require("path");
+
 const asyncHandler = require("express-async-handler");
 const { v4: uuidv4 } = require("uuid");
 const sharp = require("sharp");
@@ -18,102 +21,11 @@ const { uploadMixOfImages } = require("../middlewares/uploadImageMiddleware");
 const ApiFeatures = require("../utils/apiFeatures");
 const ApiError = require("../utils/apiError");
 
-// Multer & sharp middleware
+
+
 exports.uploadApartmentImages = uploadMixOfImages([
   { name: "images", maxCount: 20 },
 ]);
-
-// exports.resizeApartmentImages = asyncHandler(async (req, res, next) => {
-//   if (req.files.images) {
-//     req.body.images = [];
-
-//     await Promise.all(
-//       req.files.images.map(async (img, index) => {
-//         const imageName = `apartment-${uuidv4()}-${Date.now()}-${
-//           index + 1
-//         }.jpeg`;
-
-//         await sharp(img.buffer)
-//           .resize(2000, 1333)
-//           .toFormat("jpeg")
-//           .jpeg({ quality: 95 })
-//           .toFile(`uploads/apartments/${imageName}`);
-
-//         const imageDoc = await Image.create({
-//           name: imageName,
-//           path: `uploads/apartments/${imageName}`,
-//         });
-
-//         //  نخزن _id بدل الاسم
-//         req.body.images.push(imageDoc._id);
-//       })
-//     );
-//   }
-//   next();
-// });
-
-//create image for apartment
-exports.addImagesToApartment = asyncHandler(async (req, res, next) => {
-  const apartmentId = req.params.id;
-
-  // التأكد من وجود الشقة
-  const apartment = await Apartment.findById(apartmentId);
-  if (!apartment) {
-    return next(new ApiError("Apartment not found", 404));
-  }
-
-  if (!req.files.images || req.files.images.length === 0) {
-    return next(new ApiError("No images uploaded", 400));
-  }
-
-  // رفع الصور وتخزينها في موديل Image
-  const images = await Promise.all(
-    req.files.images.map(async (img, index) => {
-      const imageName = `apartment-${uuidv4()}-${Date.now()}-${index + 1}.jpeg`;
-
-      await sharp(img.buffer)
-        .resize(2000, 1333)
-        .toFormat("jpeg")
-        .jpeg({ quality: 80 })
-        .toFile(`uploads/apartments/${imageName}`);
-
-      const newImage = await Image.create({
-        name: imageName,
-        path: `uploads/apartments/${imageName}`,
-      });
-
-      return newImage._id;
-    })
-  );
-
-  // ربط الصور بالشقة
-  apartment.images.push(...images);
-  await apartment.save();
-
-  res.status(200).json({
-    status: "success",
-    data: apartment,
-  });
-});
-
-//gettttt images for apartment
-exports.getApartmentImages = asyncHandler(async (req, res, next) => {
-  const { id } = req.params;
-
-  // نجيب الشقة مع الصور
-  const apartment = await Apartment.findById(id).populate("images");
-
-  if (!apartment) {
-    return next(new ApiError("Apartment not found", 404));
-  }
-
-  res.status(200).json({
-    status: "success",
-    results: apartment.images.length,
-    data: apartment.images,
-  });
-});
-
 //create apartment
 exports.createApartment = createOne(Apartment);
 
@@ -180,11 +92,11 @@ exports.getApartmentList = asyncHandler(async (req, res, next) => {
 
   res.status(200).json({
     status: "success",
-    //skip not working
     results: apartmentsWithFavorite.length,
     totalResult: p,
     pagination: {
       ...apiFeatures.paginationResult,
+      numberOfPages: Math.ceil(p / (apiFeatures.paginationResult.limit || 50)),
     },
     data: apartmentsWithFavorite,
   });
@@ -192,7 +104,33 @@ exports.getApartmentList = asyncHandler(async (req, res, next) => {
 
 exports.getApartmentById = getOne(Apartment);
 exports.updateapartmentById = updateOne(Apartment);
-exports.deleteApartmentById = deleteOne(Apartment);
+exports.deleteApartmentById = asyncHandler(async (req, res, next) => {
+  const apartment = await Apartment.findById(req.params.id);
+
+  if (!apartment) {
+    return next(new ApiError("No apartment found with this ID", 404));
+  }
+
+  //  حذف الصور من السيرفر + Image model
+  if (apartment.images && apartment.images.length > 0) {
+    const images = await Image.find({ _id: { $in: apartment.images } });
+
+    await Promise.all(
+      images.map(async (img) => {
+        const filePath = path.join(__dirname, `../${img.path}`);
+        if (fs.existsSync(filePath)) {
+          await fs.promises.unlink(filePath);
+        }
+      })
+    );
+
+    await Image.deleteMany({ _id: { $in: apartment.images } });
+  }
+
+  await apartment.deleteOne();
+
+  res.status(204).json({ status: "success" });
+});
 
 exports.getApartmentByMap = asyncHandler(async (req, res, next) => {
   let feature = new ApiFeatures(
@@ -211,4 +149,21 @@ exports.getApartmentByMap = asyncHandler(async (req, res, next) => {
     results: apartments.length,
     data: apartments,
   });
+});
+
+// Add Feature Apatrment
+exports.AddFeatureApartment = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+  const status = req.body.status;
+  const apartment = await Apartment.findByIdAndUpdate(
+    id,
+    { isFeature: status },
+    { new: true }
+  );
+
+  if (!apartment) {
+    return next(new ApiError("No apartment on this id"));
+  }
+
+  res.status(200).json({ data: apartment });
 });

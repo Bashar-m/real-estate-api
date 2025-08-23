@@ -9,8 +9,7 @@ const {
   deleteApartmentById,
   uploadApartmentImages,
   //resizeApartmentImages,
-  getApartmentImages,
-  addImagesToApartment,
+  AddFeatureApartment,
 } = require("../services/apartmentServices");
 
 const {
@@ -22,6 +21,7 @@ const {
 const allowedTo = require("../middlewares/allowedTo");
 const protect = require("../middlewares/protect");
 const parseCoordinatesMiddleware = require("../middlewares/parseCoordinates");
+const { add } = require("winston");
 
 const router = express.Router();
 
@@ -37,12 +37,10 @@ router.route("/").post(
   createApartment
 );
 
-//IMAGE 
-router
-  .route("/:id/images")
-  .post(uploadApartmentImages, addImagesToApartment)
-  .get(getApartmentImages)
-  
+//add Feature apartment
+router.post("/:id/feature", AddFeatureApartment);
+
+
 
 router
   .route("/:id")

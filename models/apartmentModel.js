@@ -45,7 +45,7 @@ const apartmentSchema = new mongoose.Schema(
     sellers: {
       type: mongoose.Schema.ObjectId,
       ref: "Sellers",
-      required: [true, "Sellers info is required"],
+      required: false,
     },
 
     //enum
@@ -116,7 +116,10 @@ const apartmentSchema = new mongoose.Schema(
     isFavorite: {
       type: Boolean,
     },
-
+    isFeature: {
+      type: Boolean,
+      default: false,
+    },
     location: {
       type: {
         type: String,
