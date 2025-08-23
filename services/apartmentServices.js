@@ -2,8 +2,6 @@ const fs = require("fs");
 const path = require("path");
 
 const asyncHandler = require("express-async-handler");
-const { v4: uuidv4 } = require("uuid");
-const sharp = require("sharp");
 
 const Apartment = require("../models/apartmentModel");
 const Wishlist = require("../models/wishlistModel");
@@ -21,10 +19,8 @@ const { uploadMixOfImages } = require("../middlewares/uploadImageMiddleware");
 const ApiFeatures = require("../utils/apiFeatures");
 const ApiError = require("../utils/apiError");
 
-
-
 exports.uploadApartmentImages = uploadMixOfImages([
-  { name: "images", maxCount: 20 },
+  { name: "images", maxCount: 6 },
 ]);
 //create apartment
 exports.createApartment = createOne(Apartment);

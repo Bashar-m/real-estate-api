@@ -15,17 +15,12 @@ const router = express.Router();
 
 router
   .route("/")
-  .post(
-    protect,
-    allowedTo("admin"),
-    uploadBannerImages,
-    createBanner
-  )
+  .post(protect, allowedTo("admin"), uploadBannerImages, createBanner)
   .get(getBanner);
 
 router
   .route("/:id")
-  .patch(protect, allowedTo("admin"), updateBannerById)
-  .delete(protect, allowedTo("admin"), deleteBannerById);
+  .patch(protect, allowedTo("admin"), uploadBannerImages, updateBannerById)
+  .delete(protect, allowedTo("admin"), uploadBannerImages,deleteBannerById);
 
 module.exports = router;

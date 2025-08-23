@@ -6,6 +6,8 @@ const asyncHandler = require("express-async-handler");
 const multer = require("multer");
 
 const Banner = require("../models/appBannerModel");
+const Image = require("../models/imageModel");
+
 const { createOne, getAll } = require("../services/handlersFactory");
 
 const uploadDir = path.join(__dirname, "../uploads/banner");
@@ -54,11 +56,18 @@ exports.updateBannerById = asyncHandler(async (req, res, next) => {
     return res.status(404).json({ message: "Banner not found" });
   }
 
-  // لو في صورة جديدة، احذف القديمة
-  if (req.body.image && banner.image) {
-    const oldPath = path.join(uploadDir, banner.image);
-    if (fs.existsSync(oldPath)) {
-      fs.unlinkSync(oldPath);
+  // إذا فيه صورة جديدة
+  if (req.body.image) {
+    if (banner.image) {
+      // نجيب الصورة القديمة من جدول Image
+      const oldImage = await Image.findById(banner.image);
+      if (oldImage) {
+        const oldPath = path.join(__dirname, "../", oldImage.path);
+        if (fs.existsSync(oldPath)) {
+          fs.unlinkSync(oldPath); // نحذفها من السيرفر
+        }
+        await oldImage.deleteOne(); // نحذفها من الـ DB
+      }
     }
   }
 
@@ -70,20 +79,27 @@ exports.updateBannerById = asyncHandler(async (req, res, next) => {
   res.status(200).json({ data: updated });
 });
 
+
+
 exports.deleteBannerById = asyncHandler(async (req, res, next) => {
   const banner = await Banner.findById(req.params.id);
   if (!banner) {
     return res.status(404).json({ message: "Banner not found" });
   }
 
-  // حذف الصورة من السيرفر
   if (banner.image) {
-    const oldPath = path.join(uploadDir, banner.image);
-    if (fs.existsSync(oldPath)) {
-      fs.unlinkSync(oldPath);
+    const oldImage = await Image.findById(banner.image);
+    if (oldImage) {
+      const oldPath = path.join(__dirname, "../", oldImage.path);
+      if (fs.existsSync(oldPath)) {
+        fs.unlinkSync(oldPath);
+      }
+      await oldImage.deleteOne();
     }
   }
 
   await banner.deleteOne();
   res.status(204).send();
 });
+
+

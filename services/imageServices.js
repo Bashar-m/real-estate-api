@@ -126,11 +126,25 @@ exports.addImageToBanner = asyncHandler(async (req, res, next) => {
     return next(new ApiError("No image uploaded", 400));
   }
 
+  // 🔹 إذا فيه صورة قديمة نحذفها من السيرفر + Image model
+  if (banner.image) {
+    const oldImage = await Image.findById(banner.image);
+    if (oldImage) {
+      const oldPath = path.join(__dirname, "../", oldImage.path);
+      if (fs.existsSync(oldPath)) {
+        await fs.promises.unlink(oldPath); // حذف من السيرفر
+      }
+      await Image.findByIdAndDelete(banner.image); // حذف من DB
+    }
+  }
+
+  // 📂 إنشاء مجلد لو ما كان موجود
   const uploadDir = path.join(__dirname, "../uploads/banner");
   if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
   }
 
+  // 🔹 نخزن الصورة الجديدة
   const img = req.files.image[0];
   const imageName = `banner-${uuidv4()}-${Date.now()}.jpeg`;
 
@@ -145,7 +159,7 @@ exports.addImageToBanner = asyncHandler(async (req, res, next) => {
     path: `uploads/banner/${imageName}`,
   });
 
-  // استبدال الصورة القديمة بالجديدة
+  // 🔹 ربط الصورة بالـ Banner
   banner.image = newImage._id;
   await banner.save();
 
@@ -154,6 +168,7 @@ exports.addImageToBanner = asyncHandler(async (req, res, next) => {
     data: banner,
   });
 });
+
 
 //gettttt images for apartment
 exports.getBannerImage = asyncHandler(async (req, res, next) => {
