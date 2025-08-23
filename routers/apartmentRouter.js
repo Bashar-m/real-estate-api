@@ -38,9 +38,7 @@ router.route("/").post(
 );
 
 //add Feature apartment
-router.post("/:id/feature", AddFeatureApartment);
-
-
+router.post("/:id/feature", protect, allowedTo("admin"), AddFeatureApartment);
 
 router
   .route("/:id")

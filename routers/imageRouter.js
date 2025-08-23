@@ -9,6 +9,9 @@ const {
   deleteUserApartmentImage,
   deleteUserBannerImage,
 } = require("../services/imageServices");
+
+const allowedTo = require("../middlewares/allowedTo");
+const protect = require("../middlewares/protect");
 const router = express.Router();
 
 //IMAGE
@@ -23,8 +26,8 @@ router
 //Banner
 router
   .route("/:id/banner")
-  .post(uploadBannerImage, addImageToBanner)
+  .post(protect, allowedTo("admin"), uploadBannerImage, addImageToBanner)
   .get(getBannerImage)
-  .delete(deleteUserBannerImage);
+  .delete(protect, allowedTo("admin"), deleteUserBannerImage);
 
 module.exports = router;
