@@ -17,7 +17,6 @@ const {
   createUserApartment,
   uploadApartmentImages,
   getUserApartment,
-  deleteUserImage,
   deleteUserApartment,
   updateUserApartment,
 } = require("../services/userServices");
@@ -57,7 +56,6 @@ router.post(
 );
 
 router.get("/getApartment", getUserApartment);
-router.delete("/delete-image/:id", deleteUserImage);
 router.delete("/delete-apartment/:id", deleteUserApartment);
 router.patch("/update-apartment/:id", updateUserApartment);
 

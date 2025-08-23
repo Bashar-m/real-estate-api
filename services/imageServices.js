@@ -15,9 +15,7 @@ const ApiError = require("../utils/apiError");
 exports.uploadApartmentImages = uploadMixOfImages([
   { name: "images", maxCount: 6 },
 ]);
-exports.uploadBannerImage = uploadMixOfImages([
-  { name: "image", maxCount: 1 },
-]);
+exports.uploadBannerImage = uploadMixOfImages([{ name: "image", maxCount: 1 }]);
 
 // exports.resizeApartmentImages = asyncHandler(async (req, res, next) => {
 //   if (req.files.images) {
@@ -169,7 +167,6 @@ exports.addImageToBanner = asyncHandler(async (req, res, next) => {
   });
 });
 
-
 //gettttt images for apartment
 exports.getBannerImage = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
@@ -182,5 +179,69 @@ exports.getBannerImage = asyncHandler(async (req, res, next) => {
   res.status(200).json({
     status: "success",
     data: banner.image,
+  });
+});
+
+exports.deleteUserApartmentImage = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+
+  const image = await Image.findById(id);
+  if (!image) {
+    return next(new ApiError(`Image not found with id: ${id}`, 404));
+  }
+
+  // بناء مسار آمن
+  const filePath = path.resolve(__dirname, "../", image.path);
+  if (!filePath.startsWith(path.resolve(__dirname, "../"))) {
+    return next(new ApiError("Invalid file path", 400));
+  }
+
+  // حذف غير متزامن + force لتجنب الخطأ لو الملف مش موجود
+  try {
+    await fs.promises.rm(filePath, { force: true });
+  } catch (err) {
+    console.error("Failed to delete file:", err.message);
+  }
+
+  await Apartment.updateMany({ images: id }, { $pull: { images: id } });
+
+  res.status(200).json({
+    status: "success",
+    message: "Image deleted successfully and removed from apartments",
+  });
+});
+
+exports.deleteUserBannerImage = asyncHandler(async (req, res, next) => {
+  const { id } = req.params; 
+
+  const image = await Image.findByIdAndDelete(id);
+
+  if (!image) {
+    return next(new ApiError(`Image not found with id: ${id}`, 404));
+  }
+
+
+  // بناء مسار آمن
+  const filePath = path.resolve(__dirname, "../", image.path);
+  if (!filePath.startsWith(path.resolve(__dirname, "../"))) {
+    return next(new ApiError("Invalid file path", 400));
+  }
+
+  // حذف غير متزامن + force لتجنب الخطأ لو الملف مش موجود
+  try {
+    await fs.promises.rm(filePath, { force: true });
+  } catch (err) {
+    console.error("Failed to delete file:", err.message);
+  }
+
+  // 3. تحديث وثيقة البانر لإزالة مرجع الصورة
+  await appBanner.updateOne(
+    { image: image._id },
+    { $set: { image: null } }
+  );
+
+  res.status(200).json({
+    status: "success",
+    message: "Image deleted successfully and removed from banner",
   });
 });

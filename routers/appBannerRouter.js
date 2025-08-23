@@ -21,6 +21,6 @@ router
 router
   .route("/:id")
   .patch(protect, allowedTo("admin"), uploadBannerImages, updateBannerById)
-  .delete(protect, allowedTo("admin"), uploadBannerImages,deleteBannerById);
+  .delete(protect, allowedTo("admin"), deleteBannerById);
 
 module.exports = router;

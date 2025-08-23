@@ -260,12 +260,13 @@ exports.deleteUserApartment = asyncHandler(async (req, res, next) => {
     return next(new ApiError("Apartment not found or not authorized", 404));
   }
 
+  // حذف الصور من السيرفر وDB
   if (apartment.images && apartment.images.length > 0) {
     const images = await Image.find({ _id: { $in: apartment.images } });
 
     await Promise.all(
       images.map(async (img) => {
-        const filePath = path.join(__dirname, `../${img.path}`);
+        const filePath = path.join(__dirname, "../", img.path);
         if (fs.existsSync(filePath)) {
           await fs.promises.unlink(filePath);
         }
@@ -275,30 +276,17 @@ exports.deleteUserApartment = asyncHandler(async (req, res, next) => {
     await Image.deleteMany({ _id: { $in: apartment.images } });
   }
 
+  // حذف المرجع من المستخدم
   await User.findByIdAndUpdate(userId, {
     $pull: { myApartment: apId },
   });
 
   res.status(200).json({
     status: "success",
-    message: "Apartment is deleted successfully",
+    message: "Apartment deleted successfully",
   });
 });
 
 
-exports.deleteUserImage = asyncHandler(async (req, res, next) => {
-  const { id } = req.params;
 
-  // 1️⃣ نحذف الصورة
-  const image = await Image.findByIdAndDelete(id);
-  if (!image) {
-    return next(new ApiError(`Not found image with this id: ${id}`, 404));
-  }
 
-  await Apartment.updateMany({ images: id }, { $pull: { images: id } });
-
-  res.status(200).json({
-    status: "success",
-    message: "Image deleted and references removed from apartments",
-  });
-});
