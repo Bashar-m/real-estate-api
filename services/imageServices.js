@@ -273,7 +273,7 @@ exports.getImageById = asyncHandler(async (req, res, next) => {
   }
 
   // خزن فقط اسم الملف في الـ DB وليس المسار الكامل
-  const uploadsDir = path.join(__dirname, "../uploads");
+  const uploadsDir = path.join(__dirname, "../");
   const imagePath = path.join(uploadsDir, image.path);
 
   if (!fs.existsSync(imagePath)) {
