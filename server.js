@@ -94,7 +94,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// 👇 Mount routes
+//  Mount routes
 mountRoutes(app);
 
 // 👇 Error handlers
@@ -104,8 +104,7 @@ app.all("/*path", (req, res, next) => {
 
 app.use(globalError);
 
-// 👇 Server
-// 🚀 تشغيل الخادم
+
 const PORT = process.env.PORT || 8080;
 const HOST = "0.0.0.0"; // مناسب للإنتاج
 

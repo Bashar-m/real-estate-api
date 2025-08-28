@@ -212,14 +212,13 @@ exports.deleteUserApartmentImage = asyncHandler(async (req, res, next) => {
 });
 
 exports.deleteUserBannerImage = asyncHandler(async (req, res, next) => {
-  const { id } = req.params; 
+  const { id } = req.params;
 
   const image = await Image.findByIdAndDelete(id);
 
   if (!image) {
     return next(new ApiError(`Image not found with id: ${id}`, 404));
   }
-
 
   // بناء مسار آمن
   const filePath = path.resolve(__dirname, "../", image.path);
@@ -235,13 +234,32 @@ exports.deleteUserBannerImage = asyncHandler(async (req, res, next) => {
   }
 
   // 3. تحديث وثيقة البانر لإزالة مرجع الصورة
-  await appBanner.updateOne(
-    { image: image._id },
-    { $set: { image: null } }
-  );
+  await appBanner.updateOne({ image: image._id }, { $set: { image: null } });
 
   res.status(200).json({
     status: "success",
     message: "Image deleted successfully and removed from banner",
   });
+});
+
+
+
+//read image by id (file)
+exports.getImageBiId = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+
+  const image = await Image.findById(id);
+
+  if (!image) {
+    return next(new ApiError(`Image not found with id: ${id}`, 404));
+  }
+
+  const imagePath = path.resolve(image.path);
+
+  let file;
+  console.log(imagePath);
+
+  // file = await fs.readFile(imagePath);
+
+  res.sendFile(imagePath);
 });
