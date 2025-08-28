@@ -245,21 +245,44 @@ exports.deleteUserBannerImage = asyncHandler(async (req, res, next) => {
 
 
 //read image by id (file)
-exports.getImageBiId = asyncHandler(async (req, res, next) => {
+// exports.getImageBiId = asyncHandler(async (req, res, next) => {
+//   const { id } = req.params;
+
+//   const image = await Image.findById(id);
+
+//   if (!image) {
+//     return next(new ApiError(`Image not found with id: ${id}`, 404));
+//   }
+
+//   const imagePath = path.resolve(image.path);
+
+//   let file;
+//   console.log(imagePath);
+
+//   // file = await fs.readFile(imagePath);
+
+//   res.sendFile(imagePath);
+// });
+
+exports.getImageById = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
 
   const image = await Image.findById(id);
-
   if (!image) {
     return next(new ApiError(`Image not found with id: ${id}`, 404));
   }
 
-  const imagePath = path.resolve(image.path);
+  // خزن فقط اسم الملف في الـ DB وليس المسار الكامل
+  const uploadsDir = path.join(__dirname, "../uploads");
+  const imagePath = path.join(uploadsDir, image.path);
 
-  let file;
-  console.log(imagePath);
+  if (!fs.existsSync(imagePath)) {
+    return next(new ApiError("File not found on server", 404));
+  }
 
-  // file = await fs.readFile(imagePath);
-
-  res.sendFile(imagePath);
+  res.sendFile(imagePath, (err) => {
+    if (err) {
+      return next(new ApiError("Error sending file", 500));
+    }
+  });
 });

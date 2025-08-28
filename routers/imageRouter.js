@@ -8,7 +8,7 @@ const {
   uploadBannerImage,
   deleteUserApartmentImage,
   deleteUserBannerImage,
-  getImageBiId,
+  getImageById,
 } = require("../services/imageServices");
 
 const allowedTo = require("../middlewares/allowedTo");
@@ -30,6 +30,6 @@ router
   .delete(protect, allowedTo("admin"), deleteUserBannerImage);
 
 //get image for all
-router.get("/:id", getImageBiId);
+router.get("/:id", getImageById);
 
 module.exports = router;
