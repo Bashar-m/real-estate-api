@@ -24,6 +24,7 @@ const apartmentSchema = new mongoose.Schema(
     },
     neighborhood: {
       type: String,
+      required: [true, "neighborhood is required"],
     },
     city: {
       type: mongoose.Schema.ObjectId,
@@ -88,6 +89,14 @@ const apartmentSchema = new mongoose.Schema(
     },
     property_age: {
       type: Number,
+      required: false,
+    },
+    floor:{
+      type:Number
+    },
+    stock:{
+      type: Number,
+      required:true
     },
     images: [
       {

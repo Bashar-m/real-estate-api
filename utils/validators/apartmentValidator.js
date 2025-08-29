@@ -1,4 +1,4 @@
-const { check , body} = require("express-validator");
+const { check, body } = require("express-validator");
 const slugify = require("slugify");
 
 const validatorMiddleware = require("../../middlewares/validatorMiddleware");
@@ -38,11 +38,35 @@ exports.createApartmentValidator = [
 
   //check("district").notEmpty().withMessage("District is required"),
 
-  check("category")
-    .notEmpty()
-    .withMessage("Category is required"),
+  check("category").notEmpty().withMessage("Category is required"),
 
-  check("property_type").notEmpty().withMessage("Property type is required"),
+  check("property_type")
+    .notEmpty()
+    .withMessage("Property type is required")
+    .isIn([
+      "apartment",
+      "villa",
+      "land",
+      "agricultural-Land",
+      "industrial-Land",
+      "farm",
+      "shop",
+      "architecture",
+    ])
+    .withMessage("Invalid property type"),
+
+  check("property_deed_type")
+    .notEmpty()
+    .withMessage("Property Deed type is required")
+    .isIn([
+      "green",
+      "courtRolling",
+      "municipal",
+      "farm",
+      "industrial",
+      "aqricvltural",
+    ])
+    .withMessage("Invalid property Deed type"),
 
   check("property_size")
     .notEmpty()
@@ -66,8 +90,20 @@ exports.createApartmentValidator = [
     .isNumeric()
     .withMessage("Property age must be a number"),
 
+  check("floor")
+    .notEmpty()
+    .withMessage("Number of floor is required")
+    .isInt({ min: -2 })
+    .withMessage("Floor must be -2 or higher"),
+
+  check("stock")
+    .notEmpty()
+    .withMessage("Number of stock is required")
+    .isInt({ min: 0, max: 2400 })
+    .withMessage("The number of stocks cannot be more than 2400"),
+
   // check("images")
-  //   .isArray({ min: 1 })
+  //   .isMongoId()
   //   .withMessage("At least one image is required"),
 
   check("status")
@@ -75,13 +111,22 @@ exports.createApartmentValidator = [
     .isIn(["available", "rented", "sold"])
     .withMessage("Invalid status"),
 
+  check("isFavorite")
+    .optional()
+    .isBoolean()
+    .withMessage("isFavorite must be Boolean like : (true or false)"),
+
+  check("isFeature")
+    .optional()
+    .isBoolean()
+    .withMessage("isFeature must be Boolean like : (true or false)"),
+
   check("location.type")
     .optional()
     .equals("Point")
     .withMessage("Location type must be 'Point'"),
 
-  check("location.coordinates")
-  .custom((value, { req }) => {
+  check("location.coordinates").custom((value, { req }) => {
     let coords = value;
 
     // تأكد أن الإحداثيات array وأرقام

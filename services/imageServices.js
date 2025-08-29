@@ -72,7 +72,7 @@ exports.addImagesToApartment = asyncHandler(async (req, res, next) => {
       await sharp(img.buffer)
         .resize(2000, 1333)
         .toFormat("jpeg")
-        .jpeg({ quality: 80 })
+        .jpeg({ quality: 75 })
         .toFile(path.join(uploadDir, imageName));
 
       const newImage = await Image.create({
@@ -149,7 +149,7 @@ exports.addImageToBanner = asyncHandler(async (req, res, next) => {
   await sharp(img.buffer)
     .resize(2000, 1333)
     .toFormat("jpeg")
-    .jpeg({ quality: 80 })
+    .jpeg({ quality: 75 })
     .toFile(path.join(uploadDir, imageName));
 
   const newImage = await Image.create({
@@ -241,8 +241,6 @@ exports.deleteUserBannerImage = asyncHandler(async (req, res, next) => {
     message: "Image deleted successfully and removed from banner",
   });
 });
-
-
 
 //read image by id (file)
 // exports.getImageBiId = asyncHandler(async (req, res, next) => {
