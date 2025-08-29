@@ -10,6 +10,7 @@ const sellersRouter = require("./sellersRouter");
 const orderMngRoutre = require("./orderMngRoutre");
 const appBannerRoutre = require("./appBannerRouter");
 const imageRouter = require("./imageRouter");
+const helpUserRouter = require("./helpUserRouter");
 
 const mountRoutes = (app) => {
   app.use(require("../middlewares/versionMiddleWare"));
@@ -26,6 +27,7 @@ const mountRoutes = (app) => {
   app.use("/api/v1/post-order", orderMngRoutre);
   app.use("/api/v1/banner", appBannerRoutre);
   app.use("/api/v1/images", imageRouter);
+  app.use("/api/v1/helpUser", helpUserRouter);
 };
 
 module.exports = mountRoutes;
