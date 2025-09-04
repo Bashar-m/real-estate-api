@@ -216,19 +216,14 @@ exports.updateUserApartment = asyncHandler(async (req, res, next) => {
   const userId = req.user._id;
   const { id } = req.params;
 
-
-
   const apartment = await Apartment.findOne({ _id: id, owner: userId });
   if (!apartment) {
     return next(new ApiError("Apartment not found", 404));
   }
 
-  if (apartment.postStatus === "approved" || apartment.status === "available") {
+  if (apartment.postStatus === "approved") {
     return next(
-      new ApiError(
-        "You can't update the apartment after it's approved or available",
-        400
-      )
+      new ApiError("You can't update the apartment after it's approved", 400)
     );
   }
 
