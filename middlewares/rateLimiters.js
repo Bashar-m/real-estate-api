@@ -8,7 +8,7 @@ exports.loginLimiter = rateLimit({
 
 exports.signupLimiter = rateLimit({
   windowMs: 30 * 60 * 1000,
-  limit: 3,
+  limit: 5,
   message: { error: "Too many signup attempts. Please wait 30 minutes." },
 });
 

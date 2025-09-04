@@ -46,7 +46,7 @@ app.use(
   })
 );
 
-// 🧠 حماية CSP
+//  حماية CSP
 app.use(
   helmet.contentSecurityPolicy({
     directives: {
@@ -94,7 +94,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// 👇 Mount routes
+//  Mount routes
 mountRoutes(app);
 
 // 👇 Error handlers
@@ -104,16 +104,15 @@ app.all("/*path", (req, res, next) => {
 
 app.use(globalError);
 
-// 👇 Server
-// 🚀 تشغيل الخادم
+
 const PORT = process.env.PORT || 8080;
-const HOST = "0.0.0.0"; // مناسب للإنتاج
+const HOST = "192.168.93.129"; 
 
 const server = app.listen(PORT, HOST, () => {
   logger.info(`App running on http://${HOST}:${PORT}`);
 });
 
-// ⚠️ التعامل مع الوعود غير الملتقطة
+//  التعامل مع الوعود غير الملتقطة
 process.on("unhandledRejection", (err) => {
   logger.error(`UnhandledRejection: ${err.name} | ${err.message}`);
   server.close(() => {

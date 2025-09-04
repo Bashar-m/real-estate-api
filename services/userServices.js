@@ -25,7 +25,7 @@ const {
 const Apartment = require("../models/apartmentModel");
 const Image = require("../models/imageModel");
 const { uploadMixOfImages } = require("../middlewares/uploadImageMiddleware");
-const ApiFeatures = require("../utils/apiFeatures")
+const ApiFeatures = require("../utils/apiFeatures");
 
 //***************************************************************************** */
 //protect (Admin)
@@ -181,15 +181,13 @@ exports.createUserApartment = asyncHandler(async (req, res, next) => {
 exports.getUserApartment = asyncHandler(async (req, res, next) => {
   const userId = req.user._id;
 
- 
   const user = await User.findById(userId);
   if (!user) {
     return next(new ApiError("User not found", 404));
   }
 
-  
   let apiFeatures = new ApiFeatures(
-    Apartment.find({ owner: userId }).populate("city"), 
+    Apartment.find({ owner: userId }).populate("city"),
     req.query
   )
     .filter()
@@ -198,11 +196,9 @@ exports.getUserApartment = asyncHandler(async (req, res, next) => {
     .sort()
     .limitfields();
 
- 
   let countQuery = apiFeatures.cloneQuery();
   const totalResult = await countQuery.countDocuments();
 
- 
   apiFeatures = apiFeatures.paginate(totalResult);
 
   const apartments = await apiFeatures.mongooseQuery;
@@ -216,28 +212,29 @@ exports.getUserApartment = asyncHandler(async (req, res, next) => {
   });
 });
 
-
 exports.updateUserApartment = asyncHandler(async (req, res, next) => {
   const userId = req.user._id;
   const { id } = req.params;
 
- 
+
+
   const apartment = await Apartment.findOne({ _id: id, owner: userId });
   if (!apartment) {
     return next(new ApiError("Apartment not found", 404));
   }
 
- 
-  if (apartment.postStatus !== "pending") {
+  if (apartment.postStatus === "approved" || apartment.status === "available") {
     return next(
-      new ApiError("You can't update the apartment after it's approved or rejected", 400)
+      new ApiError(
+        "You can't update the apartment after it's approved or available",
+        400
+      )
     );
   }
 
-
   const updatedApartment = await Apartment.findByIdAndUpdate(id, req.body, {
     new: true,
-    runValidators: true, 
+    runValidators: true,
   });
 
   res.status(200).json({
@@ -245,7 +242,6 @@ exports.updateUserApartment = asyncHandler(async (req, res, next) => {
     data: updatedApartment,
   });
 });
-
 
 exports.deleteUserApartment = asyncHandler(async (req, res, next) => {
   const apId = req.params.id;
@@ -260,43 +256,29 @@ exports.deleteUserApartment = asyncHandler(async (req, res, next) => {
     return next(new ApiError("Apartment not found or not authorized", 404));
   }
 
+  // حذف الصور من السيرفر وDB
   if (apartment.images && apartment.images.length > 0) {
     const images = await Image.find({ _id: { $in: apartment.images } });
 
-    for (const img of images) {
-      const filePath = path.join(__dirname, "../uploads/apartments", img.path);
-
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
-    }
+    await Promise.all(
+      images.map(async (img) => {
+        const filePath = path.join(__dirname, "../", img.path);
+        if (fs.existsSync(filePath)) {
+          await fs.promises.unlink(filePath);
+        }
+      })
+    );
 
     await Image.deleteMany({ _id: { $in: apartment.images } });
   }
 
+  // حذف المرجع من المستخدم
   await User.findByIdAndUpdate(userId, {
     $pull: { myApartment: apId },
   });
 
   res.status(200).json({
     status: "success",
-    message: "Apartment is deleted successfully",
-  });
-});
-
-exports.deleteUserImage = asyncHandler(async (req, res, next) => {
-  const { id } = req.params;
-
-  // 1️⃣ نحذف الصورة
-  const image = await Image.findByIdAndDelete(id);
-  if (!image) {
-    return next(new ApiError(`Not found image with this id: ${id}`, 404));
-  }
-
-  await Apartment.updateMany({ images: id }, { $pull: { images: id } });
-
-  res.status(200).json({
-    status: "success",
-    message: "Image deleted and references removed from apartments",
+    message: "Apartment deleted successfully",
   });
 });

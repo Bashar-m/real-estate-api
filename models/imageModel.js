@@ -31,7 +31,9 @@ const imageSchema = new mongoose.Schema(
 
 // Virtual لإرجاع رابط الصورة كامل
 imageSchema.virtual("url").get(function () {
-  return this.path ? `/uploads/${this.path}` : null;
+  // قم بإزالة "uploads/" من المسار قبل بناء الـ URL
+  const pathWithoutUploads = this.path ? this.path.replace("uploads/", "") : null;
+  return pathWithoutUploads ? `/${pathWithoutUploads}` : null;
 });
 
 module.exports = mongoose.model("Image", imageSchema);
