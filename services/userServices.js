@@ -25,7 +25,7 @@ const {
 const Apartment = require("../models/apartmentModel");
 const Image = require("../models/imageModel");
 const { uploadMixOfImages } = require("../middlewares/uploadImageMiddleware");
-const ApiFeatures = require("../utils/apiFeatures")
+const ApiFeatures = require("../utils/apiFeatures");
 
 //***************************************************************************** */
 //protect (Admin)
@@ -181,15 +181,13 @@ exports.createUserApartment = asyncHandler(async (req, res, next) => {
 exports.getUserApartment = asyncHandler(async (req, res, next) => {
   const userId = req.user._id;
 
- 
   const user = await User.findById(userId);
   if (!user) {
     return next(new ApiError("User not found", 404));
   }
 
-  
   let apiFeatures = new ApiFeatures(
-    Apartment.find({ owner: userId }).populate("city"), 
+    Apartment.find({ owner: userId }).populate("city"),
     req.query
   )
     .filter()
@@ -198,11 +196,9 @@ exports.getUserApartment = asyncHandler(async (req, res, next) => {
     .sort()
     .limitfields();
 
- 
   let countQuery = apiFeatures.cloneQuery();
   const totalResult = await countQuery.countDocuments();
 
- 
   apiFeatures = apiFeatures.paginate(totalResult);
 
   const apartments = await apiFeatures.mongooseQuery;
@@ -216,28 +212,29 @@ exports.getUserApartment = asyncHandler(async (req, res, next) => {
   });
 });
 
-
 exports.updateUserApartment = asyncHandler(async (req, res, next) => {
   const userId = req.user._id;
   const { id } = req.params;
 
- 
+
+
   const apartment = await Apartment.findOne({ _id: id, owner: userId });
   if (!apartment) {
     return next(new ApiError("Apartment not found", 404));
   }
 
- 
-  if (apartment.postStatus !== "pending") {
+  if (apartment.postStatus === "approved" || apartment.status === "available") {
     return next(
-      new ApiError("You can't update the apartment after it's approved or rejected", 400)
+      new ApiError(
+        "You can't update the apartment after it's approved or available",
+        400
+      )
     );
   }
 
-
   const updatedApartment = await Apartment.findByIdAndUpdate(id, req.body, {
     new: true,
-    runValidators: true, 
+    runValidators: true,
   });
 
   res.status(200).json({
@@ -245,7 +242,6 @@ exports.updateUserApartment = asyncHandler(async (req, res, next) => {
     data: updatedApartment,
   });
 });
-
 
 exports.deleteUserApartment = asyncHandler(async (req, res, next) => {
   const apId = req.params.id;
@@ -286,7 +282,3 @@ exports.deleteUserApartment = asyncHandler(async (req, res, next) => {
     message: "Apartment deleted successfully",
   });
 });
-
-
-
-
