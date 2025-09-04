@@ -29,7 +29,6 @@ router.route("/list").get(getApartmentList);
 router.route("/map").get(getApartmentByMap);
 router.route("/").post(
   protect,
-  allowedTo("admin"),
   parseCoordinatesMiddleware,
   uploadApartmentImages,
   // resizeApartmentImages,
@@ -51,7 +50,6 @@ router
   )
   .delete(
     protect,
-    allowedTo("admin"),
     deleteApartmentValidator,
     deleteApartmentById
   );
