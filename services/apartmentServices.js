@@ -41,12 +41,15 @@ exports.getApartmentList = asyncHandler(async (req, res, next) => {
       Apartment.find({
         _id: { $in: favoriteIds.map((e) => e._id) },
         postStatus: "approved",
+        status: "available",
       }).populate("city"),
       {}
     );
   } else {
     apiFeatures = new ApiFeatures(
-      Apartment.find({ postStatus: "approved" }).populate("city"),
+      Apartment.find({ postStatus: "approved", status: "available" }).populate(
+        "city"
+      ),
       req.query
     );
   }
@@ -130,7 +133,9 @@ exports.deleteApartmentById = asyncHandler(async (req, res, next) => {
 
 exports.getApartmentByMap = asyncHandler(async (req, res, next) => {
   let feature = new ApiFeatures(
-    Apartment.find({ postStatus: "approved" }).populate("city"),
+    Apartment.find({ postStatus: "approved", status: "available" }).populate(
+      "city"
+    ),
     req.query
   );
   feature = feature
