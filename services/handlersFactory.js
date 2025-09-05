@@ -3,9 +3,18 @@ const asyncHandler = require("express-async-handler");
 const ApiError = require("../utils/apiError");
 const ApiFeatures = require("../utils/apiFeatures");
 
-exports.createOne = (Model) =>
+exports.createOne = (Model, populateFields = []) =>
   asyncHandler(async (req, res) => {
-    const document = await Model.create(req.body);
+    console.log(populateFields);
+    let document = await Model.create(req.body);
+    
+
+    // Apply populates if provided
+    if (populateFields.length > 0) {
+      document = await Model.findById(document._id).populate(populateFields);
+    }
+
+
     res.status(201).json({ status: "success", data: document });
   });
 

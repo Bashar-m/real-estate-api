@@ -51,7 +51,7 @@ exports.uploadBannerImage = uploadMixOfImages([{ name: "image", maxCount: 1 }]);
 exports.addImagesToApartment = asyncHandler(async (req, res, next) => {
   const apartmentId = req.params.id;
 
-  const apartment = await Apartment.findById(apartmentId);
+  const apartment = await (await Apartment.findById(apartmentId)).populate("city");
   if (!apartment) {
     return next(new ApiError("Apartment not found", 404));
   }

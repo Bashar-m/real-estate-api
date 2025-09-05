@@ -23,7 +23,7 @@ exports.uploadApartmentImages = uploadMixOfImages([
   { name: "images", maxCount: 6 },
 ]);
 //create apartment
-exports.createApartment = createOne(Apartment);
+exports.createApartment = createOne(Apartment , ['city']);
 
 exports.getApartmentList = asyncHandler(async (req, res, next) => {
   const userId = req.user?._id; // ✅ قد يكون undefined إذا ما في تسجيل دخول

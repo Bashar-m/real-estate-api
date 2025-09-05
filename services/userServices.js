@@ -160,7 +160,9 @@ exports.uploadApartmentImages = uploadMixOfImages([
 exports.createUserApartment = asyncHandler(async (req, res, next) => {
   const userId = req.user._id;
 
-  const newApartment = await Apartment.create({ ...req.body, owner: userId });
+  const newApartment = await (await Apartment.create({ ...req.body, owner: userId })).populate('city');
+
+  console.log(newApartment);
 
   const user = await User.findByIdAndUpdate(
     userId,
@@ -223,7 +225,7 @@ exports.updateUserApartment = asyncHandler(async (req, res, next) => {
     return next(new ApiError("Apartment not found", 404));
   }
 
-  if (apartment.postStatus === "approved" || apartment.status === "available") {
+  if (apartment.postStatus === "approved") {
     return next(
       new ApiError(
         "You can't update the apartment after it's approved or available",
@@ -232,10 +234,10 @@ exports.updateUserApartment = asyncHandler(async (req, res, next) => {
     );
   }
 
-  const updatedApartment = await Apartment.findByIdAndUpdate(id, req.body, {
+  const updatedApartment = await (await Apartment.findByIdAndUpdate(id, req.body, {
     new: true,
     runValidators: true,
-  });
+  })).populate('city');
 
   res.status(200).json({
     status: "success",
