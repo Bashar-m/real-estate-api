@@ -160,7 +160,9 @@ exports.uploadApartmentImages = uploadMixOfImages([
 exports.createUserApartment = asyncHandler(async (req, res, next) => {
   const userId = req.user._id;
 
-  const newApartment = await (await Apartment.create({ ...req.body, owner: userId })).populate('city');
+  const newApartment = await (
+    await Apartment.create({ ...req.body, owner: userId })
+  ).populate("city");
 
   console.log(newApartment);
 
@@ -229,10 +231,12 @@ exports.updateUserApartment = asyncHandler(async (req, res, next) => {
     );
   }
 
-  const updatedApartment = await (await Apartment.findByIdAndUpdate(id, req.body, {
-    new: true,
-    runValidators: true,
-  })).populate('city');
+  const updatedApartment = await (
+    await Apartment.findByIdAndUpdate(id, req.body, {
+      new: true,
+      runValidators: true,
+    })
+  ).populate("city");
 
   res.status(200).json({
     status: "success",
@@ -277,5 +281,28 @@ exports.deleteUserApartment = asyncHandler(async (req, res, next) => {
   res.status(200).json({
     status: "success",
     message: "Apartment deleted successfully",
+  });
+});
+
+exports.getUserApartmentById = asyncHandler(async (req, res, next) => {
+  const userId = req.user._id;
+  const { id } = req.params;
+
+  const user = await User.findById(userId);
+  if (!user) {
+    return next(new ApiError("User not found", 404));
+  }
+
+  const apartments = await Apartment.find({ owner: userId, _id: id }).populate(
+    "city"
+  );
+
+  if (!apartments || apartments.length === 0) {
+    return next(new ApiError("Apartment not found", 404));
+  }
+
+  res.status(200).json({
+    status: "success",
+    data: apartments,
   });
 });

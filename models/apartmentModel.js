@@ -40,7 +40,7 @@ const apartmentSchema = new mongoose.Schema(
     //bye and rent
     category: {
       type: String,
-      enum: ["buy", "rent"],
+      enum: ["buy", "rent", "swap"],
       required: [true, "Apartment must belong to a category"],
     },
     sellers: {
@@ -91,12 +91,12 @@ const apartmentSchema = new mongoose.Schema(
       type: Number,
       required: false,
     },
-    floor:{
-      type:Number
-    },
-    stock:{
+    floor: {
       type: Number,
-      required:true
+    },
+    stock: {
+      type: Number,
+      required: true,
     },
     images: [
       {
