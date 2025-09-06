@@ -57,7 +57,7 @@ exports.getApartmentList = asyncHandler(async (req, res, next) => {
   apiFeatures = apiFeatures
     .filter()
     .search()
-    .applyFilters() // 🔹 عشان يطبق الـ find(this.filterObj)
+    // .applyFilters() // 🔹 عشان يطبق الـ find(this.filterObj)
     .sort()
     .limitfields();
 

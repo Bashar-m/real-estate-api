@@ -196,7 +196,6 @@ exports.getUserApartment = asyncHandler(async (req, res, next) => {
   )
     .filter()
     .search()
-    .applyFilters()
     .sort()
     .limitfields();
 
