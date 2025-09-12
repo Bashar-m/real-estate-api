@@ -8,12 +8,4 @@ logs/
 
 
 #dummy data files
-update.js
-
-seed.js
-
-contactseed.js
-
-citySeed.js
-
-adBanner.js
+dummyData/
