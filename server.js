@@ -16,6 +16,7 @@ const globalError = require("./middlewares/errorMiddlewares");
 const logger = require("./utils/logger");
 
 const mountRoutes = require("./routers");
+require("./cronJobs");
 
 dotenv.config({ path: "config.env" });
 
@@ -25,7 +26,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: ["http://localhost:5173"], // دومين التطوير وعند انشاء دومين استضافه يجب اضافته هنا لاسمع لل api القادمه من هناك
+    origin: ["http://localhost:8080", "http://localhost:5173"], // دومين التطوير وعند انشاء دومين استضافه يجب اضافته هنا لاسمع لل api القادمه من هناك
     credentials: true,
   })
 );
@@ -104,9 +105,8 @@ app.all("/*path", (req, res, next) => {
 
 app.use(globalError);
 
-
 const PORT = process.env.PORT || 8080;
-const HOST = "0.0.0.0"; 
+const HOST = "0.0.0.0";
 
 const server = app.listen(PORT, HOST, () => {
   logger.info(`App running on http://${HOST}:${PORT}`);

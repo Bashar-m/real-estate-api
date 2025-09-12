@@ -157,24 +157,34 @@ exports.deleteLoggedUserData = asyncHandler(async (req, res, next) => {
 exports.uploadApartmentImages = uploadMixOfImages([
   { name: "images", maxCount: 20 },
 ]);
+
 exports.createUserApartment = asyncHandler(async (req, res, next) => {
   const userId = req.user._id;
+  const userinfo = await User.findById(userId);
+  if (!userinfo) return next(new ApiError("User not found", 404));
+
+  const MAX_FREE_APARTMENTS = process.env.MAX_FREE_APARTMENTS || 15;
+
+  // 👇 دلوقتي التصفير بيتم بالـ cron job
+  if (
+    userinfo.apartmentCount >= MAX_FREE_APARTMENTS &&
+    !userinfo.isSubscriber
+  ) {
+    return next(
+      new ApiError(
+        `Please subscribe to add more than ${MAX_FREE_APARTMENTS} apartments`,
+        400
+      )
+    );
+  }
 
   const newApartment = await (
     await Apartment.create({ ...req.body, owner: userId })
   ).populate("city");
 
-  console.log(newApartment);
-
-  const user = await User.findByIdAndUpdate(
-    userId,
-    { $push: { myApartment: newApartment._id } },
-    { new: true }
-  );
-
-  if (!user) {
-    return next(new ApiError("User not found", 404));
-  }
+  userinfo.apartmentCount += 1;
+  userinfo.myApartment.push(newApartment._id);
+  await userinfo.save();
 
   res.status(201).json({
     status: "success",
@@ -196,6 +206,7 @@ exports.getUserApartment = asyncHandler(async (req, res, next) => {
   )
     .filter()
     .search()
+    .applyFilters()
     .sort()
     .limitfields();
 
@@ -224,7 +235,7 @@ exports.updateUserApartment = asyncHandler(async (req, res, next) => {
     return next(new ApiError("Apartment not found", 404));
   }
 
-  if (apartment.postStatus === "approved") {
+  if (apartment.postStatus === "approved" && !req.body.status) {
     return next(
       new ApiError("You can't update the apartment after it's approved", 400)
     );
@@ -274,6 +285,7 @@ exports.deleteUserApartment = asyncHandler(async (req, res, next) => {
 
   // حذف المرجع من المستخدم
   await User.findByIdAndUpdate(userId, {
+    $inc: { apartmentCount: -1 },
     $pull: { myApartment: apId },
   });
 

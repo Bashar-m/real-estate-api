@@ -31,7 +31,7 @@ exports.signup = asyncHandler(async (req, res, next) => {
   const token = createToken(user._id);
 
   res.status(201).json({
-    message: "Account created successfully. Please verify your email.",
+    message: "Account created successfully.",
     data: sanitizeUser(user),
     token,
   });
@@ -58,8 +58,13 @@ exports.signupSendOtp = asyncHandler(async (req, res, next) => {
   }
 
   // توليد الكود وتشفيره
-  const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-  const hashedCode = crypto.createHash("sha256").update(verificationCode).digest("hex");
+  const verificationCode = Math.floor(
+    100000 + Math.random() * 900000
+  ).toString();
+  const hashedCode = crypto
+    .createHash("sha256")
+    .update(verificationCode)
+    .digest("hex");
 
   if (process.env.NODE_ENV !== "production") {
     console.log("Verification code (dev):", verificationCode);
@@ -81,7 +86,7 @@ exports.signupSendOtp = asyncHandler(async (req, res, next) => {
 
   await user.save();
 
-const html = `
+  const html = `
   <div style="font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 30px;">
     <div style="max-width: 600px; margin: auto; background-color: #fff; border-radius: 8px; padding: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
       <h2 style="color: #333;">Hello ${user.name},</h2>
@@ -103,7 +108,6 @@ const html = `
     </div>
   </div>
 `;
-
 
   await sendEmail({
     email: user.email,
@@ -131,9 +135,19 @@ exports.verifyEmailCode = asyncHandler(async (req, res, next) => {
   }
 
   // تحقق من وجود حظر مؤقت بسبب المحاولات الخاطئة
-  if (user.emailVerificationLockedUntil && user.emailVerificationLockedUntil > Date.now()) {
-    const minutesLeft = Math.ceil((user.emailVerificationLockedUntil - Date.now()) / 60000);
-    return next(new ApiError(`Too many attempts. Try again in ${minutesLeft} minute(s).`, 429));
+  if (
+    user.emailVerificationLockedUntil &&
+    user.emailVerificationLockedUntil > Date.now()
+  ) {
+    const minutesLeft = Math.ceil(
+      (user.emailVerificationLockedUntil - Date.now()) / 60000
+    );
+    return next(
+      new ApiError(
+        `Too many attempts. Try again in ${minutesLeft} minute(s).`,
+        429
+      )
+    );
   }
 
   const hashedCode = crypto.createHash("sha256").update(code).digest("hex");
@@ -151,7 +165,10 @@ exports.verifyEmailCode = asyncHandler(async (req, res, next) => {
       user.emailVerificationPenaltyLevel += 1;
 
       const lockDurations = [10, 15, 30, 1440]; // دقائق
-      const level = Math.min(user.emailVerificationPenaltyLevel, lockDurations.length - 1);
+      const level = Math.min(
+        user.emailVerificationPenaltyLevel,
+        lockDurations.length - 1
+      );
       const lockTime = lockDurations[level] * 60 * 1000;
 
       user.emailVerificationLockedUntil = Date.now() + lockTime;

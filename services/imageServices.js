@@ -8,6 +8,7 @@ const asyncHandler = require("express-async-handler");
 const { uploadMixOfImages } = require("../middlewares/uploadImageMiddleware");
 const Apartment = require("../models/apartmentModel");
 const appBanner = require("../models/appBannerModel");
+const HelpUser = require("../models/helpUserModel");
 const Image = require("../models/imageModel");
 const ApiError = require("../utils/apiError");
 
@@ -16,6 +17,10 @@ exports.uploadApartmentImages = uploadMixOfImages([
   { name: "images", maxCount: 6 },
 ]);
 exports.uploadBannerImage = uploadMixOfImages([{ name: "image", maxCount: 1 }]);
+
+exports.uploadHelpUserImage = uploadMixOfImages([
+  { name: "helpCover", maxCount: 1 },
+]);
 
 // exports.resizeApartmentImages = asyncHandler(async (req, res, next) => {
 //   if (req.files.images) {
@@ -51,7 +56,9 @@ exports.uploadBannerImage = uploadMixOfImages([{ name: "image", maxCount: 1 }]);
 exports.addImagesToApartment = asyncHandler(async (req, res, next) => {
   const apartmentId = req.params.id;
 
-  const apartment = await (await Apartment.findById(apartmentId)).populate("city");
+  const apartment = await (
+    await Apartment.findById(apartmentId)
+  ).populate("city");
   if (!apartment) {
     return next(new ApiError("Apartment not found", 404));
   }
@@ -282,5 +289,76 @@ exports.getImageById = asyncHandler(async (req, res, next) => {
     if (err) {
       return next(new ApiError("Error sending file", 500));
     }
+  });
+});
+
+// help user Image Cover
+exports.addImageToHelpUser = asyncHandler(async (req, res, next) => {
+  const HelpUserId = req.params.id;
+
+  const helpUser = await HelpUser.findById(HelpUserId);
+  if (!helpUser) {
+    return next(new ApiError("help user not found", 404));
+  }
+
+  if (!req.files.helpCover || req.files.helpCover.length === 0) {
+    return next(new ApiError("No image uploaded", 400));
+  }
+
+  // 🔹 إذا فيه صورة قديمة نحذفها من السيرفر + Image model
+  if (helpUser.helpCover) {
+    const oldImage = await Image.findById(helpUser.helpCover);
+    if (oldImage) {
+      const oldPath = path.join(__dirname, "../", oldImage.path);
+      if (fs.existsSync(oldPath)) {
+        await fs.promises.unlink(oldPath); // حذف من السيرفر
+      }
+      await Image.findByIdAndDelete(helpUser.helpCover); // حذف من DB
+    }
+  }
+
+  // 📂 إنشاء مجلد لو ما كان موجود
+  const uploadDir = path.join(__dirname, "../uploads/helpUser");
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
+
+  // 🔹 نخزن الصورة الجديدة
+  const img = req.files.helpCover[0];
+  const imageName = `helpUser-${uuidv4()}-${Date.now()}.jpeg`;
+
+  await sharp(img.buffer)
+    .resize(2000, 1333)
+    .toFormat("jpeg")
+    .jpeg({ quality: 75 })
+    .toFile(path.join(uploadDir, imageName));
+
+  const newImage = await Image.create({
+    name: imageName,
+    path: `uploads/helpUser/${imageName}`,
+  });
+
+  // 🔹 ربط الصورة بالـ Banner
+  helpUser.helpCover = newImage._id;
+  await helpUser.save();
+
+  res.status(200).json({
+    status: "success",
+    data: helpUser,
+  });
+});
+
+//gettttt images for apartment
+exports.getHelpUserImage = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+
+  const helpUser = await HelpUser.findById(id).populate("helpCover");
+  if (!helpUser) {
+    return next(new ApiError("Banner not found", 404));
+  }
+
+  res.status(200).json({
+    status: "success",
+    data: helpUser.helpCover,
   });
 });

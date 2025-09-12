@@ -1,9 +1,10 @@
 const express = require("express");
 
 const {
+  updateHelpUserById,
+  uploadHelpUserImages,
   createHelpUser,
   getHelpUser,
-  updateHelpUserById,
   deleteHelpUserById,
 } = require("../services/helpUserServices");
 
@@ -14,12 +15,12 @@ const router = express.Router();
 
 router
   .route("/")
-  .post( createHelpUser)
+  .post(protect, allowedTo("admin"), uploadHelpUserImages, createHelpUser)
   .get(getHelpUser);
 
 router
   .route("/:id")
-  .patch(protect, allowedTo("admin"), updateHelpUserById)
+  .patch(protect, allowedTo("admin"), uploadHelpUserImages, updateHelpUserById)
   .delete(protect, allowedTo("admin"), deleteHelpUserById);
 
 module.exports = router;

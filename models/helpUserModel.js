@@ -7,9 +7,10 @@ const helpUserSchema = new mongoose.Schema(
       required: [true, "Title is required"],
       trim: true,
     },
-    description: {
-      type: String,
-      required: [true, "Description is required"],
+    helpCover: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Image",
+      required: false,
     },
     videoUrl: {
       type: String,
@@ -22,5 +23,11 @@ const helpUserSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+helpUserSchema.virtual("imageUrl").get(function () {
+  if (this.helpCover) {
+    return `${process.env.BASE_URL}/helpUser/${this.helpCover}`;
+  }
+});
 
 module.exports = mongoose.model("HelpUser", helpUserSchema);

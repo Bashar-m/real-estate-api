@@ -91,6 +91,20 @@ const userSchema = new mongoose.Schema(
     otpLastSentAt: Date,
     otpNextAllowedAt: Date,
 
+    // تفاصيل الاشتراك
+    apartmentCount: {
+      type: Number,
+      default: 0,
+    },
+    lastResetAt: {
+      type: Date,
+      default: Date.now,
+    },
+    isSubscriber: {
+      type: Boolean,
+      default: false,
+    },
+
     // اختياري: تخزين توقيت المستخدم المحلي
     timezone: {
       type: String,

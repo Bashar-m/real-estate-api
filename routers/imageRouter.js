@@ -9,6 +9,9 @@ const {
   deleteUserApartmentImage,
   deleteUserBannerImage,
   getImageById,
+  addImageToHelpUser,
+  getHelpUserImage,
+  uploadHelpUserImage,
 } = require("../services/imageServices");
 
 const allowedTo = require("../middlewares/allowedTo");
@@ -28,6 +31,9 @@ router
   .route("/:id/banner")
   .post(protect, allowedTo("admin"), uploadBannerImage, addImageToBanner)
   .delete(protect, allowedTo("admin"), deleteUserBannerImage);
+
+//help user
+router.route("/:id/helpUser").post(uploadHelpUserImage, addImageToHelpUser);
 
 //get image for all
 router.get("/:id", getImageById);

@@ -23,9 +23,34 @@ exports.getPendingApartmentList = asyncHandler(async (req, res, next) => {
     .search()
     .limitfields();
 
-  const countDocuments = await Apartment.countDocuments(
-    features.getFilterObject()
-  );
+  const countDocuments = await Apartment.find({
+    postStatus: "pending",
+  }).countDocuments(features.getFilterObject());
+  features.paginate(countDocuments);
+
+  const docs = await features.mongooseQuery;
+
+  res.status(200).json({
+    status: "success",
+    results: docs.length,
+    pagination: features.paginationResult,
+    data: docs,
+  });
+});
+
+exports.getRejectedApartmentList = asyncHandler(async (req, res, next) => {
+  const features = new ApiFeatures(
+    Apartment.find({ postStatus: "rejected" }),
+    req.query
+  )
+    .filter()
+    .sort()
+    .search()
+    .limitfields();
+
+  const countDocuments = await Apartment.find({
+    postStatus: "rejected",
+  }).countDocuments(features.getFilterObject());
   features.paginate(countDocuments);
 
   const docs = await features.mongooseQuery;

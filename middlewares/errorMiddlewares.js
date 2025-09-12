@@ -16,10 +16,10 @@ const sendErrorForProd = (err, res) => {
   });
 };
 const handleJwtInvalidSignature = () =>
-  new ApiError("Invalid token, please login again..", 401);
+  new ApiError("UnAuthenticated", 401);
 
 const handleJwtExpired = () =>
-  new ApiError("Expired token, please login again..", 401);
+  new ApiError("UnAuthenticated", 401);
 
 const globalError = (err, req, res, next) => {
   err.statusCode = err.statusCode || 500;

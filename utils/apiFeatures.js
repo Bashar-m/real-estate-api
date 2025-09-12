@@ -1,3 +1,4 @@
+const City = require("../models/cityModle");
 class ApiFeatures {
   constructor(mongooseQuery, queryStringObj) {
     this.mongooseQuery = mongooseQuery;
@@ -7,7 +8,7 @@ class ApiFeatures {
 
   filter() {
     const queryStringObj = { ...this.queryStringObj };
-    const excludesFields = ["page", "limit", "sort", "fields", "keyword"];
+    const excludesFields = ["skip", "limit", "sort", "fields", "keyword"];
     excludesFields.forEach((field) => delete queryStringObj[field]);
 
     const filterObj = {};
@@ -35,10 +36,9 @@ class ApiFeatures {
 
       const searchQuery = {
         $or: [
-          { title: { $regex: keywords, $options: "i" } },
-          { description: { $regex: keywords, $options: "i" } },
-          { city: { $regex: keywords, $options: "i" } },
-          { district: { $regex: keywords, $options: "i" } },
+          { title: new RegExp(keywords, "i") },
+          { description: new RegExp(keywords, "i") },
+          { category: new RegExp(keywords, "i") },
         ],
       };
 
@@ -50,7 +50,8 @@ class ApiFeatures {
     }
     return this;
   }
-//مشان اضمن تنفيذ (دوت فايند) مره واحده على الاقل 
+
+  //مشان اضمن تنفيذ (دوت فايند) مره واحده على الاقل
   applyFilters() {
     this.mongooseQuery = this.mongooseQuery.find(this.filterObj);
     return this;
@@ -80,7 +81,7 @@ class ApiFeatures {
     return this;
   }
 
- paginate(countDocuments) {
+  paginate(countDocuments) {
     const skip = this.queryStringObj.skip * 1 || 0;
     const limit = this.queryStringObj.limit * 1 || 50;
 
