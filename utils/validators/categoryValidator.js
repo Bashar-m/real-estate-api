@@ -1,5 +1,5 @@
 const slugify = require("slugify");
-const { check , body} = require("express-validator");
+const { check, body } = require("express-validator");
 
 const validatorMiddleware = require("../../middlewares/validatorMiddleware");
 
@@ -16,6 +16,7 @@ exports.createCategoryValidator = [
     .withMessage("Too short category name")
     .isLength({ max: 32 })
     .withMessage("Too long category name")
+    .isIn(["buy", "rent", "swap"])
     .custom((val, { req }) => {
       req.body.slug = slugify(val);
       return true;
@@ -26,6 +27,7 @@ exports.updateCategoryValidator = [
   check("id").isMongoId().withMessage("Invalid category id format"),
   body("name")
     .optional()
+    .isIn(["buy", "rent", "swap"])
     .custom((val, { req }) => {
       req.body.slug = slugify(val);
       return true;

@@ -116,6 +116,15 @@ const apartmentSchema = new mongoose.Schema(
       ref: "User",
       required: false,
     },
+    //معلومات التواصل لصحاب العقار
+    phoneOwner: {
+      type: String,
+      required: true,
+    },
+    phoneCountryCode: {
+      type: String, // مثال: +963 أو +966
+      required: true,
+    },
     // مراجعه الشقه قبل     النشر
     postStatus: {
       type: String,

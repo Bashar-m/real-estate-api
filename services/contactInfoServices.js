@@ -1,5 +1,4 @@
 const ContactInfo = require("../models/ContactInfoModel");
-const asyncHandler = require("express-async-handler");
 
 const {
   createOne,

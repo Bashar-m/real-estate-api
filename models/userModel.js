@@ -26,7 +26,9 @@ const userSchema = new mongoose.Schema(
       required: true,
     },
     profileImg: {
-      type: [String],
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Image",
+      required: false,
     },
     password: {
       type: String,
@@ -129,24 +131,10 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-const setImageURL = (doc) => {
-  if (doc.profileImg) {
-    const imageUrl = `${process.env.BASE_URL}/users/${doc.profileImg}`;
-    doc.image = imageUrl;
+userSchema.virtual("imageUrl").get(function () {
+  if (this.profileImg) {
+    return `${process.env.BASE_URL}/users/${this.profileImg}`;
   }
-};
-userSchema.post("init", (doc) => {
-  setImageURL(doc);
-});
-
-userSchema.post("save", (doc) => {
-  setImageURL(doc);
-});
-
-userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
-  this.password = await bcrypt.hash(this.password, 12);
-  next();
 });
 
 const User = mongoose.model("User", userSchema);

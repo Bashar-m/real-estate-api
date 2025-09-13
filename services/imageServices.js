@@ -9,6 +9,7 @@ const { uploadMixOfImages } = require("../middlewares/uploadImageMiddleware");
 const Apartment = require("../models/apartmentModel");
 const appBanner = require("../models/appBannerModel");
 const HelpUser = require("../models/helpUserModel");
+const User = require("../models/userModel");
 const Image = require("../models/imageModel");
 const ApiError = require("../utils/apiError");
 
@@ -20,6 +21,10 @@ exports.uploadBannerImage = uploadMixOfImages([{ name: "image", maxCount: 1 }]);
 
 exports.uploadHelpUserImage = uploadMixOfImages([
   { name: "helpCover", maxCount: 1 },
+]);
+
+exports.uploadUserImage = uploadMixOfImages([
+  { name: "profileImg", maxCount: 1 },
 ]);
 
 // exports.resizeApartmentImages = asyncHandler(async (req, res, next) => {
@@ -249,49 +254,6 @@ exports.deleteUserBannerImage = asyncHandler(async (req, res, next) => {
   });
 });
 
-//read image by id (file)
-// exports.getImageBiId = asyncHandler(async (req, res, next) => {
-//   const { id } = req.params;
-
-//   const image = await Image.findById(id);
-
-//   if (!image) {
-//     return next(new ApiError(`Image not found with id: ${id}`, 404));
-//   }
-
-//   const imagePath = path.resolve(image.path);
-
-//   let file;
-//   console.log(imagePath);
-
-//   // file = await fs.readFile(imagePath);
-
-//   res.sendFile(imagePath);
-// });
-
-exports.getImageById = asyncHandler(async (req, res, next) => {
-  const { id } = req.params;
-
-  const image = await Image.findById(id);
-  if (!image) {
-    return next(new ApiError(`Image not found with id: ${id}`, 404));
-  }
-
-  // خزن فقط اسم الملف في الـ DB وليس المسار الكامل
-  const uploadsDir = path.join(__dirname, "../");
-  const imagePath = path.join(uploadsDir, image.path);
-
-  if (!fs.existsSync(imagePath)) {
-    return next(new ApiError("File not found on server", 404));
-  }
-
-  res.sendFile(imagePath, (err) => {
-    if (err) {
-      return next(new ApiError("Error sending file", 500));
-    }
-  });
-});
-
 // help user Image Cover
 exports.addImageToHelpUser = asyncHandler(async (req, res, next) => {
   const HelpUserId = req.params.id;
@@ -348,17 +310,152 @@ exports.addImageToHelpUser = asyncHandler(async (req, res, next) => {
   });
 });
 
-//gettttt images for apartment
-exports.getHelpUserImage = asyncHandler(async (req, res, next) => {
+//delete images for apartment
+exports.deleteHelpUserImage = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
 
-  const helpUser = await HelpUser.findById(id).populate("helpCover");
-  if (!helpUser) {
-    return next(new ApiError("Banner not found", 404));
+  const image = await Image.findByIdAndDelete(id);
+
+  if (!image) {
+    return next(new ApiError(`Image not found with id: ${id}`, 404));
   }
+
+  // بناء مسار آمن
+  const filePath = path.resolve(__dirname, "../", image.path);
+  if (!filePath.startsWith(path.resolve(__dirname, "../"))) {
+    return next(new ApiError("Invalid file path", 400));
+  }
+
+  // حذف غير متزامن + force لتجنب الخطأ لو الملف مش موجود
+  try {
+    await fs.promises.rm(filePath, { force: true });
+  } catch (err) {
+    console.error("Failed to delete file:", err.message);
+  }
+
+  // 3. تحديث وثيقة البانر لإزالة مرجع الصورة
+  await HelpUser.updateOne(
+    { helpCover: image._id },
+    { $set: { helpCover: null } }
+  );
 
   res.status(200).json({
     status: "success",
-    data: helpUser.helpCover,
+    message: "Image deleted successfully and removed from Help User",
+  });
+});
+
+//creatr user Image Cover
+exports.addImageToUser = asyncHandler(async (req, res, next) => {
+  const userId = req.params.id;
+
+  const user = await User.findById(userId);
+  if (!user) {
+    return next(new ApiError("user not found", 404));
+  }
+
+  if (!req.files.profileImg || req.files.profileImg.length === 0) {
+    return next(new ApiError("No image uploaded", 400));
+  }
+
+  // 🔹 إذا فيه صورة قديمة نحذفها من السيرفر + Image model
+  if (user.profileImg) {
+    const oldImage = await Image.findById(user.profileImg);
+    if (oldImage) {
+      const oldPath = path.join(__dirname, "../", oldImage.path);
+      if (fs.existsSync(oldPath)) {
+        await fs.promises.unlink(oldPath); // حذف من السيرفر
+      }
+      await Image.findByIdAndDelete(user.profileImg); // حذف من DB
+    }
+  }
+
+  // 📂 إنشاء مجلد لو ما كان موجود
+  const uploadDir = path.join(__dirname, "../uploads/users");
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
+
+  // 🔹 نخزن الصورة الجديدة
+  const img = req.files.profileImg[0];
+  const imageName = `users-${uuidv4()}-${Date.now()}.jpeg`;
+
+  await sharp(img.buffer)
+    .resize(2000, 1333)
+    .toFormat("jpeg")
+    .jpeg({ quality: 75 })
+    .toFile(path.join(uploadDir, imageName));
+
+  const newImage = await Image.create({
+    name: imageName,
+    path: `uploads/users/${imageName}`,
+  });
+
+  // 🔹 ربط الصورة بالـ Banner
+  user.profileImg = newImage._id;
+  await user.save();
+
+  res.status(200).json({
+    status: "success",
+    data: user,
+  });
+});
+
+//delete images for user
+exports.deleteUserImage = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+
+  const image = await Image.findByIdAndDelete(id);
+
+  if (!image) {
+    return next(new ApiError(`Image not found with id: ${id}`, 404));
+  }
+
+  // بناء مسار آمن
+  const filePath = path.resolve(__dirname, "../", image.path);
+  if (!filePath.startsWith(path.resolve(__dirname, "../"))) {
+    return next(new ApiError("Invalid file path", 400));
+  }
+
+  // حذف غير متزامن + force لتجنب الخطأ لو الملف مش موجود
+  try {
+    await fs.promises.rm(filePath, { force: true });
+  } catch (err) {
+    console.error("Failed to delete file:", err.message);
+  }
+
+  // 3. تحديث وثيقة البانر لإزالة مرجع الصورة
+  await User.updateOne(
+    { profileImg: image._id },
+    { $set: { profileImg: null } }
+  );
+
+  res.status(200).json({
+    status: "success",
+    message: "Image deleted successfully and removed from User",
+  });
+});
+
+//get image by id for all
+exports.getImageById = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+
+  const image = await Image.findById(id);
+  if (!image) {
+    return next(new ApiError(`Image not found with id: ${id}`, 404));
+  }
+
+  // خزن فقط اسم الملف في الـ DB وليس المسار الكامل
+  const uploadsDir = path.join(__dirname, "../");
+  const imagePath = path.join(uploadsDir, image.path);
+
+  if (!fs.existsSync(imagePath)) {
+    return next(new ApiError("File not found on server", 404));
+  }
+
+  res.sendFile(imagePath, (err) => {
+    if (err) {
+      return next(new ApiError("Error sending file", 500));
+    }
   });
 });

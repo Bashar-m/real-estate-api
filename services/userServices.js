@@ -12,7 +12,6 @@ const User = require("../models/userModel");
 
 const {
   sanitizeUser,
-  sanitizeUserApartment,
 } = require("../utils/sanitizeData");
 
 const {

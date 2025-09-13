@@ -1,17 +1,18 @@
 const express = require("express");
 const {
   addImagesToApartment,
-  getApartmentImages,
   addImageToBanner,
-  getBannerImage,
   uploadApartmentImages,
   uploadBannerImage,
   deleteUserApartmentImage,
   deleteUserBannerImage,
   getImageById,
   addImageToHelpUser,
-  getHelpUserImage,
   uploadHelpUserImage,
+  deleteHelpUserImage,
+  uploadUserImage,
+  addImageToUser,
+  deleteUserImage,
 } = require("../services/imageServices");
 
 const allowedTo = require("../middlewares/allowedTo");
@@ -33,7 +34,16 @@ router
   .delete(protect, allowedTo("admin"), deleteUserBannerImage);
 
 //help user
-router.route("/:id/helpUser").post(uploadHelpUserImage, addImageToHelpUser);
+router
+  .route("/:id/helpUser")
+  .post(protect, allowedTo("admin"), uploadHelpUserImage, addImageToHelpUser)
+  .delete(protect, allowedTo("admin"), deleteHelpUserImage);
+
+//users
+router
+  .route("/:id/user")
+  .post(protect, uploadUserImage, addImageToUser)
+  .delete(protect, deleteUserImage);
 
 //get image for all
 router.get("/:id", getImageById);

@@ -15,10 +15,6 @@ const helpUserSchema = new mongoose.Schema(
     videoUrl: {
       type: String,
       required: false,
-      match: [
-        /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/,
-        "Please enter a valid YouTube URL",
-      ],
     },
   },
   { timestamps: true }

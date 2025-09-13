@@ -34,6 +34,8 @@ exports.createApartmentValidator = [
     .isNumeric()
     .withMessage("Price must be a number"),
 
+  check("neighborhood").notEmpty().withMessage("Neighborhood is required"),
+
   check("city").notEmpty().withMessage("City is required"),
 
   //check("district").notEmpty().withMessage("District is required"),
@@ -77,7 +79,7 @@ exports.createApartmentValidator = [
   check("room")
     .notEmpty()
     .withMessage("Number of rooms is required")
-    .isInt({ min: 1 })
+    .isInt({ min: 0 })
     .withMessage("Rooms must be at least 1"),
 
   check("bathrooms")
@@ -110,6 +112,23 @@ exports.createApartmentValidator = [
     .optional()
     .isIn(["available", "rented", "sold"])
     .withMessage("Invalid status"),
+
+  check("phoneOwner")
+    .notEmpty()
+    .withMessage("phoneOwner is required")
+    .isMobilePhone("any")
+    .withMessage("Invalid phone number format"),
+
+  check("phoneCountryCode")
+    .notEmpty()
+    .withMessage("phoneCountryCode is required")
+    .matches(/^\+\d{1,4}$/)
+    .withMessage("Invalid country code format, e.g., +963 or +966"),
+
+  check("postStatus")
+    .optional()
+    .isIn(["pending", "approved", "rejected"])
+    .withMessage("Invalid post status"),
 
   check("isFavorite")
     .optional()
