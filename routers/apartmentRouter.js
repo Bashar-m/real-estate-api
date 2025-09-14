@@ -21,7 +21,6 @@ const {
 const allowedTo = require("../middlewares/allowedTo");
 const protect = require("../middlewares/protect");
 const parseCoordinatesMiddleware = require("../middlewares/parseCoordinates");
-const { add } = require("winston");
 
 const router = express.Router();
 
