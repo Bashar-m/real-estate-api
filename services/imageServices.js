@@ -17,7 +17,9 @@ const ApiError = require("../utils/apiError");
 exports.uploadApartmentImages = uploadMixOfImages([
   { name: "images", maxCount: 6 },
 ]);
-exports.uploadBannerImage = uploadMixOfImages([{ name: "image", maxCount: 1 }]);
+exports.uploadBannerImage = uploadMixOfImages([
+  { name: "image", maxCount: 1 }
+]);
 
 exports.uploadHelpUserImage = uploadMixOfImages([
   { name: "helpCover", maxCount: 1 },
@@ -27,37 +29,7 @@ exports.uploadUserImage = uploadMixOfImages([
   { name: "profileImg", maxCount: 1 },
 ]);
 
-// exports.resizeApartmentImages = asyncHandler(async (req, res, next) => {
-//   if (req.files.images) {
-//     req.body.images = [];
-
-//     await Promise.all(
-//       req.files.images.map(async (img, index) => {
-//         const imageName = `apartment-${uuidv4()}-${Date.now()}-${
-//           index + 1
-//         }.jpeg`;
-
-//         await sharp(img.buffer)
-//           .resize(2000, 1333)
-//           .toFormat("jpeg")
-//           .jpeg({ quality: 95 })
-//           .toFile(`uploads/apartments/${imageName}`);
-
-//         const imageDoc = await Image.create({
-//           name: imageName,
-//           path: `uploads/apartments/${imageName}`,
-//         });
-
-//         //  نخزن _id بدل الاسم
-//         req.body.images.push(imageDoc._id);
-//       })
-//     );
-//   }
-//   next();
-// });
-
 //create image for apartment
-
 exports.addImagesToApartment = asyncHandler(async (req, res, next) => {
   const apartmentId = req.params.id;
 
