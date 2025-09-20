@@ -163,8 +163,7 @@ exports.createUserApartment = asyncHandler(async (req, res, next) => {
   if (!userinfo) return next(new ApiError("User not found", 404));
 
   const MAX_FREE_APARTMENTS = process.env.MAX_FREE_APARTMENTS || 15;
-
-  // 👇 دلوقتي التصفير بيتم بالـ cron job
+ 
   if (
     userinfo.apartmentCount >= MAX_FREE_APARTMENTS &&
     !userinfo.isSubscriber

@@ -116,16 +116,16 @@ const apartmentSchema = new mongoose.Schema(
       ref: "User",
       required: false,
     },
-    //معلومات التواصل لصحاب العقار
+   
     phoneOwner: {
       type: String,
       required: true,
     },
     phoneCountryCode: {
-      type: String, // مثال: +963 أو +966
-      required: true,
+      type: String,
+      required: false,
     },
-    // مراجعه الشقه قبل     النشر
+    // مراجعه الشقه قبل   النشر
     postStatus: {
       type: String,
       enum: ["pending", "approved", "rejected"],
